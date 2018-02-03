@@ -24,7 +24,8 @@ def webhook():
     # Get request parameters
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
-    chart_data = req.get('result').get('contexts').get('chart-data.original')
+    contexts = req.get('result').get('contexts')
+    chart_data = contexts[0].get('parameters').get('chart-data.original')
 
     # Check if the request is for the foodcomposition action
     if action == 'plotbot':
