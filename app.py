@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, url_for, request, redirect, flash
 import pygal
 import cairosvg
@@ -56,8 +57,8 @@ def webhook():
     return make_response(jsonify(req))
 
 if __name__ == '__main__':
-    #port = int(os.getenv('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0')#, port=port) 
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
 
 
 
