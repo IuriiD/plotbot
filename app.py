@@ -55,8 +55,8 @@ def webhook():
 
         # Compose the response to dialogflow.com
         res = {
-            'speech': 'Done',
-            'displayText': 'Done',
+            'speech': str(chart_data),
+            'displayText': str(chart_data),
             'contextOut': req['result']['contexts']
         }
 
