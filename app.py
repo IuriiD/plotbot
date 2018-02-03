@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, url_for, request, redirect, flash
+from flask import Flask, render_template, url_for, request, redirect, flash, make_response
 import pygal
 import cairosvg
 
