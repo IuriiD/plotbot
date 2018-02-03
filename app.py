@@ -12,6 +12,13 @@ def pygal_bar_chart(data, png_file_name, chart_name):
     bar_chart.render_to_png(png_file_name)
     return True
 
+def split(txt, seps):
+    # split input data by a list of possible separators
+    default_sep = seps[0]
+    for sep in seps[1:]:
+        txt = txt.replace(sep, default_sep)
+    return [i.strip() for i in txt.split(default_sep)]
+
 @app.route('/')
 def index():
     return 'Food Composition Chatbot'
@@ -34,7 +41,9 @@ def webhook():
     # Check if the request is for the plotbot action
     elif action == 'plotbot':
         contexts = req.get('result').get('contexts')
-        chart_data = contexts[0].get('parameters').get('chart-data.original')
+        chart_data2split = contexts[0].get('parameters').get('chart-data.original')
+        chart_data = split(chart_data2split, [' ', ',', ';', '-', '/'])
+
 
         #pygal_bar_chart(chart_data,'test.png', 'test chart')
 
