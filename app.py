@@ -61,8 +61,8 @@ def webhook():
     return make_response(jsonify(res))
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0'), port=port)
+    port = int(os.getenv('PORT', 5000)) # for Heroku, otherwise we get "Error R10 (Boot timeout) -> Web process failed to bind to $PORT within 60 seconds of launch" ; solution: https://jamesmcfadden.co.uk/heroku-web-process-failed-to-bind-to-port-within-60-seconds-of-launch
+    app.run(debug=False, host='0.0.0.0', port=port)
 
 
 '''
