@@ -34,7 +34,7 @@ def webhook():
     # Check if the request is for the plotbot action
     elif action == 'plotbot':
         contexts = req.get('result').get('contexts')
-        chart_data = list(contexts[0].get('parameters').get('chart-data.original'))
+        chart_data = contexts[0].get('parameters').get('chart-data.original')
 
         #pygal_bar_chart(chart_data,'test.png', 'test chart')
 
@@ -42,7 +42,7 @@ def webhook():
         print('************************')
         print(action)
         print('************************')
-        print(chart_data)
+        print('chart_data: {}, type: {}.'.format(chart_data, type(chart_data)))
 
         # Compose the response to dialogflow.com
         res = {
