@@ -1,4 +1,74 @@
 import os
+import json
+import requests
+from flask import Flask, request, make_response, jsonify
+from keys import nutrionix_app_id, nutrionix_app_key
+import pygal
+import cairosvg
+
+app = Flask(__name__)
+
+def pygal_bar_chart(data, png_file_name, chart_name):
+    bar_chart = pygal.Bar()             # Then create a bar graph object
+    bar_chart.add(chart_name, data)     # Add some values
+    bar_chart.render_to_png(png_file_name)
+    return True
+
+@app.route('/')
+def index():
+    return 'Food Composition Chatbot'
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # Get request parameters
+    req = request.get_json(silent=True, force=True)
+    action = req.get('result').get('action')
+
+    # Check if the request is for the foodcomposition action
+    if action == 'foodcomposition':
+
+        res = {
+            'speech': 'foodcomposition',
+            'displayText': 'foodcomposition',
+            'contextOut': req['result']['contexts']
+        }
+
+    # Check if the request is for the plotbot action
+    elif action == 'plotbot':
+        contexts = req.get('result').get('contexts')
+        chart_data = list(contexts[0].get('parameters').get('chart-data.original'))
+
+        pygal_bar_chart(chart_data,'test.png', 'test chart')
+
+        print(req)
+        print('************************')
+        print(action)
+        print('************************')
+        print(chart_data)
+
+        # Compose the response to dialogflow.com
+        res = {
+            'speech': 'Done',
+            'displayText': 'Done',
+            'contextOut': req['result']['contexts']
+        }
+
+    else:
+        # If the request is not to the foodcomposition action throw an error
+        res = {
+            'speech': 'Something wrong happened',
+            'displayText': 'Something wrong happened'
+        }
+
+    return make_response(jsonify(res))
+
+if __name__ == '__main__':
+    #port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0')#, port=port)
+
+
+'''
+import os
 from flask import Flask, render_template, url_for, request, redirect, flash, make_response, jsonify
 import pygal
 import cairosvg
@@ -9,7 +79,7 @@ chart_name = 'Fibonacci'
 data = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 png_file_name = 'bar_chart1.png'
 
-def pygal_bar_chart(data, png_file_name, chart_name='Default'):
+def pygal_bar_chart(data, png_file_name, chart_name):
     bar_chart = pygal.Bar()             # Then create a bar graph object
     bar_chart.add(chart_name, data)     # Add some values
     bar_chart.render_to_png(png_file_name)
@@ -25,12 +95,18 @@ def webhook():
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
 
-    # Check if the request is for the foodcomposition action
+    # Check if the request is for the plotbot action
     if action == 'plotbot':
         contexts = req.get('result').get('contexts')
         chart_data = list(contexts[0].get('parameters').get('chart-data.original'))
 
-        pygal_bar_chart(chart_data,'test.png')
+        pygal_bar_chart(chart_data,'test.png', 'test chart')
+
+        print(req)
+        print('************************')
+        print(action)
+        print('************************')
+        print(chart_data)
 
         # Compose the response to dialogflow.com
         res = {
@@ -38,6 +114,7 @@ def webhook():
             'displayText': 'Done',
             'contextOut': req['result']['contexts']
         }
+
     else:
         # If the request is not to the translate.text action throw an error
         res = {
@@ -45,19 +122,13 @@ def webhook():
             'displayText': 'Something wrong happened'
         }
 
-    print(req)
-    print('************************')
-    print(action)
-    print('************************')
-    print(chart_data)
-
     return make_response(jsonify(res))
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000)) # for Heroku, otherwise we get "Error R10 (Boot timeout) -> Web process failed to bind to $PORT within 60 seconds of launch" ; solution: https://jamesmcfadden.co.uk/heroku-web-process-failed-to-bind-to-port-within-60-seconds-of-launch
     app.run(debug=False, host='0.0.0.0', port=port)
 
-'''
+
 {'originalRequest': {
     'source': 'telegram',
     'data': {
