@@ -1,8 +1,6 @@
 import os
 import json
-import requests
 from flask import Flask, request, make_response, jsonify
-from keys import nutrionix_app_id, nutrionix_app_key
 import pygal
 import cairosvg
 
