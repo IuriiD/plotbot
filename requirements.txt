@@ -1,0 +1,3 @@
+Flask==0.12.2
+pygal==2.4.0
+CairoSVG=2.1.3
