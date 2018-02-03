@@ -24,6 +24,7 @@ def webhook():
     # Get request parameters
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
+    chart_data = req.get('result').get('contexts')
 
     # Check if the request is for the foodcomposition action
     if action == 'plotbot':
@@ -54,6 +55,10 @@ def webhook():
     return make_response(jsonify(res))
     '''
     print(req)
+    print('************************')
+    print(action)
+    print('************************')
+    print(chart_data)
     return make_response(jsonify(req))
 
 if __name__ == '__main__':
