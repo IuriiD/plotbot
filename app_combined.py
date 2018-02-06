@@ -94,6 +94,13 @@ def pygal_bar_chart(data, png_file_name, chart_name):
     bar_chart.render_to_png(png_file_name)
     return True
 
+def split(txt, seps):
+    # split input data by a list of possible separators
+    default_sep = seps[0]
+    for sep in seps[1:]:
+        txt = txt.replace(sep, default_sep)
+    return [float(i.strip()) for i in txt.split()]
+
 @app.route('/')
 def index():
     return 'Food Composition Chatbot'
@@ -125,7 +132,8 @@ def webhook():
     # Check if the request is for the plotbot action
     elif action == 'plotbot':
         contexts = req.get('result').get('contexts')
-        chart_data = list(contexts[0].get('parameters').get('chart-data.original'))
+        chart_data2split = contexts[0].get('parameters').get('chart-data.original')
+        chart_data = split(chart_data2split, [' ', ',', ';', '-', '/'])
 
         pygal_bar_chart(chart_data,'test.png', 'test chart')
 
@@ -133,17 +141,64 @@ def webhook():
         print('************************')
         print(action)
         print('************************')
-        print(chart_data)
+        print('chart_data: {}, type: {}.'.format(chart_data, type(chart_data)))
 
         # Compose the response to dialogflow.com
         res = {
-            'speech': 'Done',
-            'displayText': 'Done',
+            'speech': 'http://35.196.100.14/static/test.png',
+            'displayText': 'http://35.196.100.14/static/test.png',
             'contextOut': req['result']['contexts']
-        }
+            }
 
     else:
-        # If the request is not to the foodcomposition action throw an error
+        # If the request is not of our actions throw an error
+        res = {
+            'speech': 'Something wrong happened',
+            'displayText': 'Something wrong happened'
+        }
+
+    # Check if the request is for the action 'bar.chart-basic.style-webhook' - building a BASIC BAR chart
+    elif action == 'bar.chart-basic.style-webhook':
+        contexts = req.get('result').get('contexts')
+        mychartdata = contexts[0].get('parameters')
+        ds1, ds2, ds3 = '', '', '' # original string versions of our data strings (up to 5-10? can be added)
+        ds1_err, ds2_err, ds3_err = False, False, False # error flags for data strings - we'll try to build a chart using at least 1 correct data string and inform user in case errors are found
+
+        # data-series-X example: ["series A: 0, 1, 2, 3, 4", "5"]
+        if 'data-series-1.original' in mychartdata:
+            if mychartdata['data-series-1.original'][0] != '':
+                ds1 = mychartdata['data-series-1.original'][0]
+                # split this string by ':"
+                # get ds name
+                # get these hopefully numbers (string representation)
+                # split them by possible delimiters
+                # check if they are numbers and convert to float
+            else:
+                ds1_err = True
+        else:
+            ds1_err = True
+
+
+        chart_data2split = contexts[0].get('parameters').get('chart-data.original')
+        chart_data = split(chart_data2split, [' ', ',', ';', '-', '/'])
+
+        pygal_bar_chart(chart_data,'test.png', 'test chart')
+
+        print(req)
+        print('************************')
+        print(action)
+        print('************************')
+        print('chart_data: {}, type: {}.'.format(chart_data, type(chart_data)))
+
+        # Compose the response to dialogflow.com
+        res = {
+            'speech': 'http://35.196.100.14/static/test.png',
+            'displayText': 'http://35.196.100.14/static/test.png',
+            'contextOut': req['result']['contexts']
+            }
+
+    else:
+        # If the request is not of our actions throw an error
         res = {
             'speech': 'Something wrong happened',
             'displayText': 'Something wrong happened'
@@ -154,3 +209,220 @@ def webhook():
 if __name__ == '__main__':
     #port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0')#, port=port)
+
+'''
+{
+    "data":
+        {
+            "telegram":
+                {
+                    "reply_markup":
+                        {
+                            "inline_keyboard":
+                                [
+                                    [
+                                        {
+                                            "callback_data": "Red",
+                                            "text": "Red"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "callback_data": "Green",
+                                            "text": "Green"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "callback_data": "Yellow",
+                                            "text": "Yellow"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "callback_data": "Blue",
+                                            "text": "Blue"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "callback_data": "Pink",
+                                            "text": "Pink"
+                                        }
+                                    ]
+                                ]
+                        },
+                    "text": "Pick a color"
+                }
+        }
+}
+
+{
+    'data':
+        {
+            'telegram':
+                {
+                    'photo': 'http://35.196.100.14/static/test.png'
+                }
+        }
+}
+'''
+# JSON from webhook
+
+{
+  "id": "9770e9d4-e7ed-4ed1-8344-5c5ac7cd597f",
+  "timestamp": "2018-02-06T09:26:11.25Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "yes",
+    "action": "bar.chart-basic.style-webhook",
+    "actionIncomplete": false,
+    "parameters": {},
+    "contexts": [
+      {
+        "name": "mychart",
+        "parameters": {
+          "data-series-1.original": [
+            "series A: 0, 1, 2, 3, 4",
+            "5"
+          ],
+          "bar-chart-styles": "basic",
+          "data-series-1": [
+            "series A 0 1 2 3 4",
+            "5"
+          ],
+          "data-series-2": [
+            "series Fibonacci 1 2 4 8 16 32"
+          ],
+          "chart-types": "bar chart",
+          "chart-types.original": "",
+          "data-series-2.original": "series Fibonacci: 1, 2, 4, 8, 16, 32",
+          "data-series-0.original": "series A: 1, 2, 4, 5, 6, 7",
+          "data-series-0": [
+            "series A 1 2 4 5 6 7"
+          ],
+          "bar-chart-styles.original": "basic"
+        },
+        "lifespan": 5
+      },
+      {
+        "name": "bar-basic-dataseries-add0-followup",
+        "parameters": {
+          "data-series-1.original": [
+            "series A: 0, 1, 2, 3, 4",
+            "5"
+          ],
+          "data-series-1": [
+            "series A 0 1 2 3 4",
+            "5"
+          ],
+          "data-series-2": [
+            "series Fibonacci 1 2 4 8 16 32"
+          ],
+          "data-series-2.original": "series Fibonacci: 1, 2, 4, 8, 16, 32",
+          "data-series-0.original": "series A: 1, 2, 4, 5, 6, 7",
+          "data-series-0": [
+            "series A 1 2 4 5 6 7"
+          ]
+        },
+        "lifespan": 5
+      },
+      {
+        "name": "bar-chart-basic-style",
+        "parameters": {
+          "data-series-1.original": [
+            "series A: 0, 1, 2, 3, 4",
+            "5"
+          ],
+          "bar-chart-styles": "basic",
+          "data-series-1": [
+            "series A 0 1 2 3 4",
+            "5"
+          ],
+          "data-series-2": [
+            "series Fibonacci 1 2 4 8 16 32"
+          ],
+          "chart-types": "bar chart",
+          "chart-types.original": "",
+          "data-series-2.original": "series Fibonacci: 1, 2, 4, 8, 16, 32",
+          "data-series-0.original": "series A: 1, 2, 4, 5, 6, 7",
+          "data-series-0": [
+            "series A 1 2 4 5 6 7"
+          ],
+          "bar-chart-styles.original": "basic"
+        },
+        "lifespan": 1
+      },
+      {
+        "name": "bar-basic-dataseries-add1-followup",
+        "parameters": {
+          "data-series-1.original": [
+            "series A: 0, 1, 2, 3, 4",
+            "5"
+          ],
+          "data-series-1": [
+            "series A 0 1 2 3 4",
+            "5"
+          ],
+          "data-series-2": [
+            "series Fibonacci 1 2 4 8 16 32"
+          ],
+          "data-series-2.original": "series Fibonacci: 1, 2, 4, 8, 16, 32"
+        },
+        "lifespan": 4
+      },
+      {
+        "name": "barchart-followup",
+        "parameters": {
+          "data-series-1.original": [
+            "series A: 0, 1, 2, 3, 4",
+            "5"
+          ],
+          "bar-chart-styles": "basic",
+          "data-series-1": [
+            "series A 0 1 2 3 4",
+            "5"
+          ],
+          "data-series-2": [
+            "series Fibonacci 1 2 4 8 16 32"
+          ],
+          "chart-types": "bar chart",
+          "chart-types.original": "",
+          "data-series-2.original": "series Fibonacci: 1, 2, 4, 8, 16, 32",
+          "data-series-0.original": "series A: 1, 2, 4, 5, 6, 7",
+          "data-series-0": [
+            "series A 1 2 4 5 6 7"
+          ],
+          "bar-chart-styles.original": "basic"
+        },
+        "lifespan": 1
+      }
+    ],
+    "metadata": {
+      "intentId": "e97dff81-8705-47ec-8aa5-8dacb166ee0a",
+      "webhookUsed": "true",
+      "webhookForSlotFillingUsed": "false",
+      "webhookResponseTime": 5001,
+      "intentName": "bar.chart - basic.style - webhook"
+    },
+    "fulfillment": {
+      "speech": "",
+      "messages": [
+        {
+          "type": 0,
+          "speech": ""
+        }
+      ]
+    },
+    "score": 1
+  },
+  "status": {
+    "code": 206,
+    "errorType": "partial_content",
+    "errorDetails": "Webhook call failed. Error: Request timeout.",
+    "webhookTimedOut": true
+  },
+  "sessionId": "55ae83c3-7561-4978-9b2e-a0e4282e1591"
+}
+
