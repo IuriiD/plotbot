@@ -14,7 +14,7 @@ def get_data(mychartdata, ds_key):
     if ds_key == 'data-series-1.original':
         ds = mychartdata[ds_key][0]
     else:
-        ds = mychartdata[ds_key]
+        ds = mychartdata[ds_key] 
     print('***************** ds-' + ds_key + ' ******************')
     print(ds)
 
