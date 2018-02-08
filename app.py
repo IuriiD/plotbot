@@ -143,12 +143,17 @@ def webhook():
         outputcontext = contexts
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
+            print('Here1')
             if 'validated_ds' in outputcontext[0]['parameters']:
+                print('Here2')
                 outputcontext[0]['parameters']['validated_ds'].append(validation_result[2])
             else:
+                print('Here3')
                 outputcontext[0]['parameters']['validated_ds'] = [validation_result[2]]
         else:
+            print('Here4')
             if not outputcontext[0]['parameters']['validated_ds']:
+                print('Here5')
                 for context in outputcontext:
                     if context['name'] == 'ready2plot':
                         context['lifespan'] = 0
