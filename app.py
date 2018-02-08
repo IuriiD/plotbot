@@ -146,19 +146,23 @@ def webhook():
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
             print('Here1')
-            if 'validated_ds' in outputcontext[0]['parameters']:
-                print('Here2')
-                outputcontext[0]['parameters']['validated_ds'].append(validation_result[2])
-            else:
-                print('Here3')
-                outputcontext[0]['parameters'].update({'validated_ds': [validation_result[2]]})
+            for context in outputcontext:
+                if context['name'] == 'mychart':
+                    if 'validated_ds' in context['parameters']:
+                    print('Here2')
+                    context['parameters']['validated_ds'].append(validation_result[2])
+                else:
+                    print('Here3')
+                    context['parameters'].update({'validated_ds': [validation_result[2]]})
         else:
             print('Here4')
-            if not outputcontext[0]['parameters']['validated_ds']:
-                print('Here5')
-                for context in outputcontext:
-                    if context['name'] == 'ready2plot':
-                        context['lifespan'] = 0
+            for context in outputcontext:
+                if context['name'] == 'mychart':
+                    if not context['parameters']['validated_ds']:
+                        print('Here5')
+                        for anothercontext in outputcontext:
+                            if anothercontext['name'] == 'ready2plot':
+                                anothercontext['lifespan'] = 0
 
         print('New contexts: '+ str(outputcontext))
 
