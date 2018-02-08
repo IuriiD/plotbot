@@ -140,7 +140,7 @@ def webhook():
         # and save validated DS in it
 
         # get existing contexts
-        outputcontext = req['result']['contexts']
+        outputcontext = contexts
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
             if 'validated_ds' in outputcontext[0]['parameters']:
