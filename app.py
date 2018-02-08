@@ -149,8 +149,8 @@ def webhook():
             for context in outputcontext:
                 if context['name'] == 'mychart':
                     if 'validated_ds' in context['parameters']:
-                    print('Here2')
-                    context['parameters']['validated_ds'].append(validation_result[2])
+                        print('Here2')
+                        context['parameters']['validated_ds'].append(validation_result[2])
                 else:
                     print('Here3')
                     context['parameters'].update({'validated_ds': [validation_result[2]]})
