@@ -110,6 +110,7 @@ def webhook():
     # Get request parameters
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
+    print('Webhook received: ' + str(req))
 
     # Check if the request is for the foodcomposition action
     if action == 'foodcomposition':
@@ -141,6 +142,7 @@ def webhook():
 
         # get existing contexts
         outputcontext = contexts
+        print('Old contexts: ' + str(outputcontext))
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
             print('Here1')
@@ -158,7 +160,7 @@ def webhook():
                     if context['name'] == 'ready2plot':
                         context['lifespan'] = 0
 
-        print(outputcontext)
+        print('New contexts: '+ str(outputcontext))
 
         res = {
             'speech': validation_result[1],
