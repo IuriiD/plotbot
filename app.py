@@ -76,7 +76,7 @@ def get_data(mychartdata, ds_key):
     chart_type = mychartdata['chart-types']
     chart_subtype = mychartdata['bar-chart-styles']
     if result_code == 'ok':
-        output = "Alright! $data-series-0.original for our " + chart_subtype + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh"
+        output = "Alright! " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh"
     elif result_code == 'partly':
         output = "Some errors were found in your data. After replacing the errors with 0, the data series will look like " + ds_name_part + ": " + str(ds_data) + ". Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?"
     else:
