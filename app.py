@@ -144,9 +144,9 @@ def webhook():
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
             if 'validated_ds' in outputcontext[0]['parameters']:
-                outputcontext[0]['parameters']['validated_ds'].append(validation_result[3])
+                outputcontext[0]['parameters']['validated_ds'].append(validation_result[2])
             else:
-                outputcontext[0]['parameters']['validated_ds'] = [validation_result[3]]
+                outputcontext[0]['parameters']['validated_ds'] = [validation_result[2]]
         else:
             if not outputcontext[0]['parameters']['validated_ds']:
                 for context in outputcontext:
@@ -154,8 +154,8 @@ def webhook():
                         context['lifespan'] = 0
 
         res = {
-            'speech': validation_result[2],
-            'displayText': validation_result[2],
+            'speech': validation_result[1],
+            'displayText': validation_result[1],
             'contextOut': outputcontext
         }
 
