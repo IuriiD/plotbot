@@ -10,36 +10,7 @@ myinput = {
     "parameters": {
       "data-series-0": "fibonacci 1 2 3 4 5"
     },
-    "contexts": [
-      {
-        "name": "mychart",
-        "parameters": {
-          "bar-chart-styles": "basic",
-          "chart-types": "bar chart",
-          "chart-types.original": "",
-          "data-series-0.original": "fibonacci: 1, 2, 3, 4, 5",
-          "data-series-0": "fibonacci 1 2 3 4 5",
-          "bar-chart-styles.original": "basic"
-        },
-        "lifespan": 5
-      },
-      {
-        "name": "bar-basic-dataseries-add0-followup",
-        "parameters": {
-          "data-series-0.original": "fibonacci: 1, 2, 3, 4, 5",
-          "data-series-0": "fibonacci 1 2 3 4 5"
-        },
-        "lifespan": 2
-      },
-      {
-        "name": "ready2plot",
-        "parameters": {
-          "data-series-0.original": "fibonacci: 1, 2, 3, 4, 5",
-          "data-series-0": "fibonacci 1 2 3 4 5"
-        },
-        "lifespan": 5
-      }
-    ],
+    "contexts": [{'name': 'barchart-followup-2', 'parameters': {'bar-chart-styles': 'basic', 'chart-types': 'bar chart', 'chart-types.original': '', 'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5', 'bar-chart-styles.original': 'basic'}, 'lifespan': 0}, {'name': 'barchart-followup-3', 'parameters': {'bar-chart-styles': 'basic', 'chart-types': 'bar chart', 'chart-types.original': '', 'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5', 'bar-chart-styles.original': 'basic'}, 'lifespan': 0}, {'name': 'mychart', 'parameters': {'bar-chart-styles': 'basic', 'chart-types': 'bar chart', 'chart-types.original': '', 'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5', 'bar-chart-styles.original': 'basic'}, 'lifespan': 5}, {'name': 'bar-basic-dataseries-add0-followup', 'parameters': {'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5'}, 'lifespan': 2}, {'name': 'barchart-followup', 'parameters': {'bar-chart-styles': 'basic', 'chart-types': 'bar chart', 'chart-types.original': '', 'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5', 'bar-chart-styles.original': 'basic'}, 'lifespan': 0}, {'name': 'ready2plot', 'parameters': {'data-series-0.original': 'fibonacci: 1, 2, 3, 4, 5', 'data-series-0': 'fibonacci 1 2 3 4 5'}, 'lifespan': 5}],
     "metadata": {
       "intentId": "52ed7917-6920-4c68-b6e7-55ef6562d6ce",
       "webhookUsed": "true",
@@ -81,11 +52,7 @@ myinput = {
   "sessionId": "55ae83c3-7561-4978-9b2e-a0e4282e1591"
 }
 
-if 'validated_ds' in myinput['result']['contexts'][0]['parameters']:
-    print('Hello')
-else:
-    print('No')
-    myinput['result']['contexts'][0]['parameters']['validated_ds'] = 'validated_ds added'
-
-print(myinput)
-
+print(myinput['result']['contexts'])
+for context in myinput['result']['contexts']:
+    if context['name'] == 'mychart':
+        print('Hello')
