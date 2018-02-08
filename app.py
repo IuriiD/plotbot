@@ -79,7 +79,7 @@ def get_data(mychartdata, ds_key):
     if result_code == 'ok':
         output = [
             'ok',
-            "Alright! " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
+            "Alright! Series " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
             {ds_name_part: ds_data}
         ]
     elif result_code == 'partly':
@@ -143,7 +143,10 @@ def webhook():
         outputcontext = req['result']['contexts']
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
-            outputcontext[0]['parameters']['validated_ds'].update(validation_result[3])
+            if validated_ds in outputcontext[0]['parameters']:
+                outputcontext[0]['parameters']['validated_ds'].update(validation_result[3])
+            else:
+                outputcontext[0]['parameters']['validated_ds'] = validation_result[3]
         else:
             if not outputcontext[0]['parameters']['validated_ds']:
                 for context in outputcontext:
