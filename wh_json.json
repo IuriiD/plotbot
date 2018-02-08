@@ -1,0 +1,90 @@
+{
+  "id": "80289735-c57a-4565-b0be-496d53eadd88",
+  "timestamp": "2018-02-08T07:14:04.969Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "series 1: 1, 2, 3, 4, 5",
+    "action": "data-series-0",
+    "actionIncomplete": false,
+    "parameters": {
+      "data-series-0": [
+        "series 1 1 2 3 4 5"
+      ]
+    },
+    "contexts": [
+      {
+        "name": "mychart",
+        "parameters": {
+          "bar-chart-styles": "basic",
+          "chart-types": "bar chart",
+          "chart-types.original": "",
+          "data-series-0.original": "series 1: 1, 2, 3, 4, 5",
+          "data-series-0": [
+            "series 1 1 2 3 4 5"
+          ],
+          "bar-chart-styles.original": "basic"
+        },
+        "lifespan": 5
+      },
+      {
+        "name": "bar-basic-dataseries-add0-followup",
+        "parameters": {
+          "data-series-0.original": "series 1: 1, 2, 3, 4, 5",
+          "data-series-0": [
+            "series 1 1 2 3 4 5"
+          ]
+        },
+        "lifespan": 2
+      },
+      {
+        "name": "ready2plot",
+        "parameters": {
+          "data-series-0.original": "series 1: 1, 2, 3, 4, 5",
+          "data-series-0": [
+            "series 1 1 2 3 4 5"
+          ]
+        },
+        "lifespan": 5
+      }
+    ],
+    "metadata": {
+      "intentId": "52ed7917-6920-4c68-b6e7-55ef6562d6ce",
+      "webhookUsed": "true",
+      "webhookForSlotFillingUsed": "false",
+      "webhookResponseTime": 5000,
+      "intentName": "bar - basic - data.series - add0"
+    },
+    "fulfillment": {
+      "speech": "Alright! series 1: 1, 2, 3, 4, 5 for our basic bar chart received.",
+      "messages": [
+        {
+          "type": 0,
+          "platform": "telegram",
+          "speech": "Alright! series 1: 1, 2, 3, 4, 5 for our basic bar chart received."
+        },
+        {
+          "type": 0,
+          "platform": "telegram",
+          "speech": "Add another data series (please follow the same format, 'series Fibonacci: 1, 2, 4, 8, 16, 32') or let me draw our chart? If something is wrong please write 'restart' to start afresh"
+        },
+        {
+          "type": 0,
+          "speech": "Alright! series 1: 1, 2, 3, 4, 5 for our basic bar chart received."
+        },
+        {
+          "type": 0,
+          "speech": "Add another data series (please follow the same format, 'series Fibonacci: 1, 2, 4, 8, 16, 32') or let me draw our chart? If something is wrong please write 'restart' to start afresh"
+        }
+      ]
+    },
+    "score": 1
+  },
+  "status": {
+    "code": 206,
+    "errorType": "partial_content",
+    "errorDetails": "Webhook call failed. Error: Request timeout.",
+    "webhookTimedOut": true
+  },
+  "sessionId": "55ae83c3-7561-4978-9b2e-a0e4282e1591"
+}
