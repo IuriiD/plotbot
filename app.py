@@ -149,7 +149,7 @@ def webhook():
                 outputcontext[0]['parameters']['validated_ds'].append(validation_result[2])
             else:
                 print('Here3')
-                outputcontext[0]['parameters']['validated_ds'] = [validation_result[2]]
+                outputcontext[0]['parameters'].update({'validated_ds': [validation_result[2]]})
         else:
             print('Here4')
             if not outputcontext[0]['parameters']['validated_ds']:
@@ -157,6 +157,8 @@ def webhook():
                 for context in outputcontext:
                     if context['name'] == 'ready2plot':
                         context['lifespan'] = 0
+
+        print(outputcontext)
 
         res = {
             'speech': validation_result[1],
