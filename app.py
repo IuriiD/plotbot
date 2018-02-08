@@ -110,7 +110,7 @@ def webhook():
         contexts = req.get('result').get('contexts')
 
         # from the 1st context (supposed to be 'mychart') get 'parameters'
-        mychartdata = contexts['mychart'].get('parameters')
+        mychartdata = contexts[0].get('parameters')
 
         # get and try to parse and validate data series, in case it's invalid - return error message
         validation_result = get_data(mychartdata, 'data-series-0.original')
