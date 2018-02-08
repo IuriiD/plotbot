@@ -73,14 +73,27 @@ def get_data(mychartdata, ds_key):
     # 2. 'partly' = at least some (1) numbers with or without ds name >> Some errors were found in your data. After replacing errors with 0, your data series will look like ... . Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? You can also start afresh (write 'restart')
     # 3. 'bad' = no numbers (ds name doesn't matter) >> Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'
     # p.s. some additional data for response compilation - chart type and subtype
+    # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
     chart_type = mychartdata['chart-types']
     chart_subtype = mychartdata['bar-chart-styles']
     if result_code == 'ok':
-        output = "Alright! " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh"
+        output = [
+            'ok',
+            "Alright! " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
+            {ds_name_part: ds_data}
+        ]
     elif result_code == 'partly':
-        output = "Some errors were found in your data. After replacing the errors with 0, the data series will look like " + ds_name_part + ": " + str(ds_data) + ". Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?"
+        output = [
+            'partly',
+            "Some errors were found in your data. After replacing those errors with 0, the data series will look like '" + ds_name_part + ": " + str(ds_data) + "'. Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
+            {ds_name_part: ds_data}
+            ]
     else:
-        output = "Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'"
+        output = [
+            'bad',
+            "Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'",
+            {}
+            ]
 
     return output
 
@@ -118,11 +131,29 @@ def webhook():
         # get and try to parse and validate data series, in case it's invalid - return error message
         validation_result = get_data(mychartdata, 'data-series-0.original')
 
-    # Compose the response to dialogflow.com
+        # Compose the response to dialogflow.com
+        # Depending on validation results we need to update contexts
+        # After triggering 'add-series-XX' intent in DF a context 'ready2plot' is created which allows to proceed to plotting
+        # If data entered by user is invalid and if no previous valid data exists in context 'mychart' in key 'validated_ds'
+        # then lifespan for 'ready2plot' context should be set to 0 (no plotting allowed until at least 1 valid DS is entered)
+        # If this is the 1st time that this validation webhook is triggered - create a key 'validated_ds' in context 'mychart'
+        # and save validated DS in it
+
+        # get existing contexts
+        outputcontext = req['result']['contexts']
+
+        if validation_result[0] == 'ok' or validation_result[0] == 'partial':
+            outputcontext['parameters']['validated_ds'].update(validation_result[3])
+        else:
+            if not outputcontext['parameters']['validated_ds']:
+                for context in outputcontext:
+                    if context['name'] == 'ready2plot':
+                        context['lifespan'] = 0
+
         res = {
-            'speech': str(validation_result),
-            'displayText': str(validation_result),
-            'contextOut': req['result']['contexts']
+            'speech': validation_result[2],
+            'displayText': validation_result[2],
+            'contextOut': outputcontext
         }
 
 
