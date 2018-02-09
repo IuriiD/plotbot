@@ -93,7 +93,7 @@ def nutrionix_requests(label_list):
 def pygal_bar_chart(data, png_file_name):
     bar_chart = pygal.Bar()
     for ds in data:
-        for key, value in ds:
+        for key, value in ds.items():
             bar_chart.add(key, value)
     bar_chart.render_to_png(png_file_name)
     return True
@@ -274,7 +274,7 @@ def webhook():
             if context['name'] == 'mychart':
                 data2plot = context['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
 
-        pygal_bar_chart(data2plot,'test.png')
+        pygal_bar_chart(data2plot,'static/test.png')
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -283,8 +283,8 @@ def webhook():
 
         # Compose the response to dialogflow.com
         res = {
-            'speech': 'http://35.196.100.14/test.png',
-            'displayText': 'http://35.196.100.14/test.png',
+            'speech': 'http://35.196.100.14/static/test.png',
+            'displayText': 'http://35.196.100.14/static/test.png',
             'contextOut': contexts
         }
 
