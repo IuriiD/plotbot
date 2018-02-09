@@ -194,7 +194,7 @@ def webhook():
             if context['name'] == 'mychart':
                 data2plot = context['parameters']['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
 
-        pygal_bar_chart(data2plot,'test.svg')
+        pygal_bar_chart(data2plot,'test.svg') 
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
