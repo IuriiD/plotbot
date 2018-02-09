@@ -192,7 +192,7 @@ def webhook():
         contexts = req.get('result').get('contexts')
         for context in contexts:
             if context['name'] == 'mychart':
-                data2plot = context['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
+                data2plot = context['parameters']['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
 
         pygal_bar_chart(data2plot,'test.png')
 

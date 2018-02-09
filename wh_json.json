@@ -1,1 +1,3 @@
-"validated_ds": [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
+"validated_ds": [{"fibo": [1, 2, 4, 8]},
+            {"next": [2, 3, 4, 5]}
+          ]
