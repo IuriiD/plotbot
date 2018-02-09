@@ -146,6 +146,7 @@ def webhook():
         outputcontext = contexts
         # print('Old contexts: ' + str(outputcontext))
 
+        # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
         if validation_result[0] == 'ok' or validation_result[0] == 'partly':
             print('Here1')
             for context in outputcontext:
@@ -157,10 +158,11 @@ def webhook():
                         print('Here3')
                         context['parameters'].update({'validated_ds': [validation_result[2]]})
         else:
+            # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
             print('Here4')
             for context in outputcontext:
                 if context['name'] == 'mychart':
-                    if not context['parameters']['validated_ds']:
+                    if not 'validated_ds' in context['parameters']:
                         print('Here5')
                         for anothercontext in outputcontext:
                             if anothercontext['name'] == 'ready2plot':
