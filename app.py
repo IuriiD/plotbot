@@ -79,7 +79,7 @@ def get_data(mychartdata, ds_key):
     if result_code == 'ok':
         output = [
             'ok',
-            "Alright! Series " + ds + " for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
+            "Alright! Series '" + ds + "' for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
             {ds_name_part: ds_data}
         ]
     elif result_code == 'partly':
