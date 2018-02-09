@@ -11,7 +11,7 @@ app = Flask(__name__)
 def pygal_bar_chart(data, png_file_name):
     bar_chart = pygal.Bar()
     for ds in data:
-        for key, value in ds:
+        for key, value in ds.items():
             bar_chart.add(key, value)
     bar_chart.render_to_png(png_file_name)
     return True
