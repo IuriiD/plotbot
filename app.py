@@ -144,7 +144,7 @@ def webhook():
         outputcontext = contexts
         # print('Old contexts: ' + str(outputcontext))
 
-        if validation_result[0] == 'ok' or validation_result[0] == 'partial':
+        if validation_result[0] == 'ok' or validation_result[0] == 'partly':
             print('Here1')
             for context in outputcontext:
                 if context['name'] == 'mychart':
