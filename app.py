@@ -76,6 +76,8 @@ def get_data(mychartdata, ds_key):
     # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
     chart_type = mychartdata['chart-types']
     chart_subtype = mychartdata['bar-chart-styles']
+
+    # we also need to ckeck for previous validated series to display them to user
     if result_code == 'ok':
         output = [
             'ok',
