@@ -129,7 +129,7 @@ def get_data(mychartdata, ds_key):
     if len(ds_splitted) == 1:
         ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ',', ';', '-', '/'])
     else:
-        ds_name_part = ds_splitted[0].strip() # any values including empty
+        ds_name = ds_splitted[0].strip() # any values including empty
         ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ',', ';', '-', '/'])
 
     # so we have a part supposed to be data series. variants:
@@ -272,9 +272,9 @@ def webhook():
         contexts = req.get('result').get('contexts')
         for context in contexts:
             if context['name'] == 'mychart':
-                data2plot = context['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
+                data2plot = context['parameters']['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
 
-        pygal_bar_chart(data2plot,'static/test.svg')
+        pygal_bar_chart(data2plot,'/static/test.svg')
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:

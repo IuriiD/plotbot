@@ -47,7 +47,7 @@ def get_data(mychartdata, ds_key):
     if len(ds_splitted) == 1:
         ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ',', ';', '-', '/'])
     else:
-        ds_name_part = ds_splitted[0].strip() # any values including empty
+        ds_name = ds_splitted[0].strip() # any values including empty
         ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ',', ';', '-', '/'])
 
     # so we have a part supposed to be data series. variants:
