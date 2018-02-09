@@ -142,7 +142,7 @@ def webhook():
 
         # get existing contexts
         outputcontext = contexts
-        print('Old contexts: ' + str(outputcontext))
+        # print('Old contexts: ' + str(outputcontext))
 
         if validation_result[0] == 'ok' or validation_result[0] == 'partial':
             print('Here1')
@@ -164,7 +164,7 @@ def webhook():
                             if anothercontext['name'] == 'ready2plot':
                                 anothercontext['lifespan'] = 0
 
-        print('New contexts: '+ str(outputcontext))
+        # print('New contexts: '+ str(outputcontext))
 
         res = {
             'speech': validation_result[1],
