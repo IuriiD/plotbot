@@ -84,13 +84,13 @@ def get_data(mychartdata, ds_key):
         output = [
             'ok',
             "Alright! Series '" + ds + "' for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
-            {ds_name_part: ds_data}
+            {ds_name: ds_data}
         ]
     elif result_code == 'partly':
         output = [
             'partly',
-            "Some errors were found in your data. After replacing those errors with 0, the data series will look like '" + ds_name_part + ": " + str(ds_data) + "'. Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
-            {ds_name_part: ds_data}
+            "Some errors were found in your data. After replacing those errors with 0, the data series will look like '" + ds_name + ": " + str(ds_data) + "'. Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
+            {ds_name: ds_data}
             ]
     else:
         output = [
@@ -194,7 +194,7 @@ def webhook():
             if context['name'] == 'mychart':
                 data2plot = context['parameters']['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
 
-        pygal_bar_chart(data2plot,'test.svg') 
+        pygal_bar_chart(data2plot,'test.svg')
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
