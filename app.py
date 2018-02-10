@@ -45,10 +45,10 @@ def get_data(mychartdata, ds_key):
     # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, 4, 5, 5,6 'series D: 1, 2, 3, 5,3'
     ds_splitted = ds.split(':')
     if len(ds_splitted) == 1:
-        ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ',', ';', '-', '/'])
+        ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ',', ';', '- ', '/'])
     else:
         ds_name = ds_splitted[0].strip() # any values including empty
-        ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ',', ';', '-', '/'])
+        ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ',', ';', '- ', '/'])
 
     # so we have a part supposed to be data series. variants:
     # 1. correct data ('4', '4', '5', '5', '6') - result code 'ok'
