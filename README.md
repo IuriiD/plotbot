@@ -5,11 +5,11 @@ Python library used to build charts - <a href="http://pygal.org/en/stable/index.
 <br>A link to web demo/telegram/FB messenger will be provided later after reaching more stable version. So far conversation with this chatbot in Telegram looks like this:
 
 <p>
-    <a href="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_1.jpg" target="_blank"><img src="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_1.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
+    <a href="https://iuriid.github.io/img/pb-1.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-1.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
     <br>
-    <a href="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_2.jpg" target="_blank"><img src="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_2.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
+    <a href="https://iuriid.github.io/img/pb-2.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-2.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
     <br>
-    <a href="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_3.jpg" target="_blank"><img src="https://github.com/IuriiD/IuriiD.github.io/blob/master/img/pb_3.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
+    <a href="https://iuriid.github.io/img/pb-3.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-3.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
 </p>
 
 
