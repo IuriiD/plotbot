@@ -1,1 +1,60 @@
-"validated_ds": [{"fibo": [1, 2, 4, 8]},{"next": [2, 3, 4, 5]}]
+drawchart = {
+  "id": "8df336eb-a9b3-47e7-9ae0-8f8f46a351c5",
+  "timestamp": "2018-02-09T14:35:27.467Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "draw chart",
+    "action": "",
+    "actionIncomplete": false,
+    "parameters": {},
+    "contexts": [
+      {
+        "name": "draw-chart",
+        "parameters": {},
+        "lifespan": 2
+      }
+    ],
+    "metadata": {
+      "intentId": "c3d94cb6-4752-4af8-af8a-bb1df0dd3677",
+      "webhookUsed": "false",
+      "webhookForSlotFillingUsed": "false",
+      "intentName": "draw.chart"
+    },
+    "fulfillment": {
+      "speech": "Ok. I can build a line, bar, pie or dot chart. Which one do you need?",
+      "messages": [
+        {
+          "type": 0,
+          "platform": "telegram",
+          "speech": "Ok. I can build a line, bar, pie or dot chart. Which one do you need?"
+        },
+        {
+          "type": 0,
+          "platform": "telegram",
+          "speech": "By the way in case you'll want to start over (at any stage), please just write 'restart'."
+        },
+        {
+          "type": 3,
+          "platform": "telegram",
+          "imageUrl": "https://lh4.googleusercontent.com/RPAJX4fBtu1WufmL9rycVIp0dq3531_wF4OpOmEd2rc3unCOXyDUTZwnoJuH_PssmZ87UFfgRIsn4ogsuwUY=w1920-h974"
+        },
+        {
+          "type": 0,
+          "speech": "Ok. What chart type do you need: line, bar, pie or dot chart?"
+        },
+        {
+          "type": 0,
+          "speech": "By the way in case you'll want to start over (at any stage), please just write 'restart'."
+        }
+      ]
+    },
+    "score": 1
+  },
+  "status": {
+    "code": 200,
+    "errorType": "success",
+    "webhookTimedOut": false
+  },
+  "sessionId": "599970b1-d135-4ad5-a64d-941435705c53"
+}
