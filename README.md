@@ -7,7 +7,9 @@ Python library used to build charts - <a href="http://pygal.org/en/stable/index.
 <p>
     <a href="https://iuriid.github.io/img/pb-1.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-1.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
     <br>
+    <br>
     <a href="https://iuriid.github.io/img/pb-2.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-2.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
+    <br>
     <br>
     <a href="https://iuriid.github.io/img/pb-3.jpg" target="_blank"><img src="https://iuriid.github.io/img/pb-3.jpg" class="img-fluid img-thumbnail" style="max-width: 350px"></a>
 </p>
