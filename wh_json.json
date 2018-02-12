@@ -1,51 +1,62 @@
-drawchart = {
-  "id": "8df336eb-a9b3-47e7-9ae0-8f8f46a351c5",
-  "timestamp": "2018-02-09T14:35:27.467Z",
+{
+  "id": "6fb1e02d-8932-4917-8194-103509aacb27",
+  "timestamp": "2018-02-12T11:32:08.85Z",
   "lang": "en",
   "result": {
     "source": "agent",
-    "resolvedQuery": "draw chart",
+    "resolvedQuery": "usual",
     "action": "",
     "actionIncomplete": false,
-    "parameters": {},
+    "parameters": {
+      "pie-chart-styles": "basic",
+      "chart-types": "pie chart"
+    },
     "contexts": [
       {
-        "name": "draw-chart",
-        "parameters": {},
-        "lifespan": 2
+        "name": "piechart-basicstyle-followup",
+        "parameters": {
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "chart-types.original": "",
+          "pie-chart-styles.original": "usual"
+        },
+        "lifespan": 11
+      },
+      {
+        "name": "mychart",
+        "parameters": {
+          "chartname": "dhdhd",
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "pie-chart-styles.original": "usual",
+          "chart-types.original": "",
+          "chartname.original": "dhdhd"
+        },
+        "lifespan": 5
+      },
+      {
+        "name": "piechart-followup",
+        "parameters": {
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "pie-chart-styles.original": "usual",
+          "chart-types.original": ""
+        },
+        "lifespan": 1
       }
     ],
     "metadata": {
-      "intentId": "c3d94cb6-4752-4af8-af8a-bb1df0dd3677",
+      "intentId": "23b4d7db-eec9-4561-a4e2-601942fb1275",
       "webhookUsed": "false",
       "webhookForSlotFillingUsed": "false",
-      "intentName": "draw.chart"
+      "intentName": "pie.chart - basic.style"
     },
     "fulfillment": {
-      "speech": "Ok. I can build a line, bar, pie or dot chart. Which one do you need?",
+      "speech": "Ok. So it will be a basic pie chart. Now you need to enter 1 or several data series in format \"series name (optionally): one number\", for eg. 'Product 1: 63' or just '63'",
       "messages": [
         {
           "type": 0,
-          "platform": "telegram",
-          "speech": "Ok. I can build a line, bar, pie or dot chart. Which one do you need?"
-        },
-        {
-          "type": 0,
-          "platform": "telegram",
-          "speech": "By the way in case you'll want to start over (at any stage), please just write 'restart'."
-        },
-        {
-          "type": 3,
-          "platform": "telegram",
-          "imageUrl": "https://lh4.googleusercontent.com/RPAJX4fBtu1WufmL9rycVIp0dq3531_wF4OpOmEd2rc3unCOXyDUTZwnoJuH_PssmZ87UFfgRIsn4ogsuwUY=w1920-h974"
-        },
-        {
-          "type": 0,
-          "speech": "Ok. What chart type do you need: line, bar, pie or dot chart?"
-        },
-        {
-          "type": 0,
-          "speech": "By the way in case you'll want to start over (at any stage), please just write 'restart'."
+          "speech": "Ok. So it will be a basic pie chart.\n\nNow you need to enter 1 or several data series in format \"series name (optionally): one number\", for eg. 'Product 1: 63' or just '63'"
         }
       ]
     },

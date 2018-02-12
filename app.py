@@ -1,3 +1,5 @@
+# this is the version uploaded to Heroku
+
 import os
 import json
 from flask import Flask, request, make_response, jsonify
@@ -8,13 +10,84 @@ app = Flask(__name__)
 
 # ###################### Plotbot Functions ##############################
 
-def pygal_bar_chart(data, png_file_name):
+# Bar chart - basic
+def pygal_bar_basic(data, chartname, file_name):
     bar_chart = pygal.Bar()
+    bar_chart = pygal.Bar(print_values=True, style=DefaultStyle(
+        value_font_family='googlefont:Raleway',
+        value_font_size=30,
+        value_colors=('white',)))
+    bar_chart.title = chartname
     for ds in data:
         for key, value in ds.items():
             bar_chart.add(key, value)
-    bar_chart.render_to_png(png_file_name)
+    bar_chart.render_to_file(file_name + '.svg')
+    bar_chart.render_to_png(file_name + '.png')
     return True
+
+# Bar chart - horizontal
+def pygal_bar_horizontal(data, chartname, file_name):
+    bar_chart = pygal.HorizontalBar()
+    bar_chart = pygal.HorizontalBar(print_values=True, style=DefaultStyle(
+        value_font_family='googlefont:Raleway',
+        value_font_size=30,
+        value_colors=('white',)))
+    bar_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            bar_chart.add(key, value)
+    bar_chart.render_to_file(file_name + '.svg')
+    bar_chart.render_to_png(file_name + '.png')
+    return True
+
+# Bar chart - stacked
+def pygal_bar_stacked(data, chartname, file_name):
+    bar_chart = pygal.StackedBar()
+    bar_chart = pygal.StackedBar(print_values=True, style=DefaultStyle(
+        value_font_family='googlefont:Raleway',
+        value_font_size=30,
+        value_colors=('white',)))
+    bar_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            bar_chart.add(key, value)
+    bar_chart.render_to_file(file_name + '.svg')
+    bar_chart.render_to_png(file_name + '.png')
+    return True
+
+# Line chart - basic
+def pygal_line_basic(data, chartname, file_name):
+    line_chart = pygal.Line(print_values=True)
+    line_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            line_chart.add(key, value)
+    line_chart.render_to_file(file_name + '.svg')
+    line_chart.render_to_png(file_name + '.png')
+    return True
+
+# Line chart - horizontal
+def pygal_line_horizontal(data, chartname, file_name):
+    line_chart = pygal.HorizontalLine(print_values=True)
+    line_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            line_chart.add(key, value)
+    line_chart.render_to_file(file_name + '.svg')
+    line_chart.render_to_png(file_name + '.png')
+    return True
+
+# Line chart - stacked
+def pygal_line_stacked(data, chartname, file_name):
+    line_chart = pygal.StackedLine(print_values=True)
+    line_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            line_chart.add(key, value)
+    line_chart.render_to_file(file_name + '.svg')
+    line_chart.render_to_png(file_name + '.png')
+    return True
+
 
 def mysplit(txt, seps):
     # split input string by a list of possible separators, for eg. '4 - 4  5/ 5,6' >> ['4', '4', '5', '5', '6']
@@ -45,10 +118,10 @@ def get_data(mychartdata, ds_key):
     # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, 4, 5, 5,6 'series D: 1, 2, 3, 5,3'
     ds_splitted = ds.split(':')
     if len(ds_splitted) == 1:
-        ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ',', ';', '- ', '/'])
+        ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ' . ', ',', ';', '- ', '/'])
     else:
         ds_name = ds_splitted[0].strip() # any values including empty
-        ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ',', ';', '- ', '/'])
+        ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ' . ', ',', ';', '- ', '/'])
 
     # so we have a part supposed to be data series. variants:
     # 1. correct data ('4', '4', '5', '5', '6') - result code 'ok'
@@ -57,9 +130,9 @@ def get_data(mychartdata, ds_key):
     # we'll try to convert these data to float numbers, all nondigit values will be substituted with 0
     # in case all series contains only 0s (valid 0s or nondigit values substituted with 0) - result code 'bad'
     for item in ds_data_part:
-        if item.isdigit():
+        try:
             ds_data.append(float(item))
-        else:
+        except ValueError:
             ds_data.append(0)
             result_code = 'partly'
 
@@ -78,18 +151,31 @@ def get_data(mychartdata, ds_key):
     # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
     chart_type = mychartdata['chart-types']
     chart_subtype = mychartdata['bar-chart-styles']
+    chart_name = mychartdata['chartname']
 
-    # we also need to ckeck for previous validated series to display them to user
+    # we also need to check for previous validated series to display them to user
+    if 'validated_ds' in mychartdata:
+        already_validated_data = mychartdata['validated_ds'] # is a list of dictionaries "validated_ds": [{"": [1, 2, 3]}, {"": [0, 9, 3]}]
+        already_validated_data_nice = ' (in addition to series '
+        for x in range(len(already_validated_data)):
+            for key, value in already_validated_data[x].items():
+                if x>0:
+                    already_validated_data_nice += ', '
+                already_validated_data_nice += '"{}": {}'.format(key, value)
+        already_validated_data_nice += '). '
+    else:
+        already_validated_data_nice = '. '
+
     if result_code == 'ok':
         output = [
             'ok',
-            "Alright! Series '" + ds + "' for our " + chart_subtype + " " + chart_type + " received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh",
+            'Alright! Series "' + ds_name + '": ' + str(ds_data) + " for our " + chart_subtype + " " + chart_type + " entitled '" + chart_name + "' received" + already_validated_data_nice + "Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
             {ds_name: ds_data}
         ]
     elif result_code == 'partly':
         output = [
             'partly',
-            "Some errors were found in your data. After replacing those errors with 0, the data series will look like '" + ds_name + ": " + str(ds_data) + "'. Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
+            "Some errors were found in your data. After replacing those errors with 0, we will get '" + ds_name + ": " + str(ds_data) + already_validated_data_nice + "Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
             {ds_name: ds_data}
             ]
     else:
@@ -104,7 +190,6 @@ def get_data(mychartdata, ds_key):
 # ###################### Plotbot Functions END ##############################
 
 # ###################### Decorators ##############################
-
 @app.route('/')
 def index():
     return 'Food Composition Chatbot'
@@ -115,7 +200,7 @@ def webhook():
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
 
-    # Check if the request is for the foodcomposition action
+    # FoodCompositionChatbot action
     if action == 'foodcomposition':
         foodlabel = []
         # Get food to be analysed
@@ -133,37 +218,15 @@ def webhook():
             'contextOut': req['result']['contexts']
         }
 
-    elif action == 'testbot':
-        myinput = req.get('result').get('parameters').get('inputdata'))
-
-        res = {
-            'speech': 'http://35.196.100.14/static/test.png',
-            #'displayText': 'http://35.196.100.14/static/test.svg',
-            'messages': [
-                {
-                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
-                    'type': 0,
-                    'platform': 'telegram'
-                },
-                {
-                    "type": 1,
-                    "platform": "telegram",
-                    "imageUrl": "https://iuriid.github.io/img/fc-1.jpg"
-                },
-                {
-                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
-                    'type': 0,
-                }
-            ],
-            'contextOut': req['result']['contexts']
-        }
-
+    # PlotBot - input validation action
     elif action == 'data-series-0':
         #  get 'contexts'
         contexts = req.get('result').get('contexts')
 
         # from the 1st context (supposed to be 'mychart') get 'parameters'
-        mychartdata = contexts[0].get('parameters')
+        for context in contexts:
+            if context['name'] == 'mychart':
+                mychartdata = context.get('parameters')
 
         # get and try to parse and validate data series, in case it's invalid - return error message
         validation_result = get_data(mychartdata, 'data-series-0.original')
@@ -210,16 +273,52 @@ def webhook():
             'contextOut': outputcontext
         }
 
+    # TestBot Webhook action - testing stuff
+    elif action == 'testbot':
+        myinput = req.get('result').get('parameters').get('inputdata')
 
-    # Check if the request is for the plotbot action
+        res = {
+            'speech': 'http://35.196.100.14/static/test.png',
+            #'displayText': 'http://35.196.100.14/static/test.svg',
+            'messages': [
+                {
+                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
+                    'type': 0,
+                    'platform': 'telegram'
+                },
+                {
+                    "type": 1,
+                    "platform": "telegram",
+                    "imageUrl": "https://iuriid.github.io/img/fc-1.jpg"
+                },
+                {
+                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
+                    'type': 0,
+                }
+            ],
+            'contextOut': req['result']['contexts']
+        }
+
+    # PlotBot - charting webhook
     elif action == 'plotbot':
         # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
         contexts = req.get('result').get('contexts')
         for context in contexts:
             if context['name'] == 'mychart':
+                charttype = context['parameters']['chart-types']
+                chartsubtype = context['parameters']['bar-chart-styles']
                 data2plot = context['parameters']['validated_ds'] # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
+                chartname = context['parameters']['chartname']
 
-        pygal_bar_chart(data2plot,'static/test.png')
+        # to name our chart we'll use last 12 digist of 'id' from JSON got from dialogflow
+        ourfilename = 'static/' + req.get('id')[-12:]
+
+        if chartsubtype == 'basic':
+            pygal_bar_basic(data2plot, chartname, ourfilename)
+        elif chartsubtype == 'horizontal':
+            pygal_bar_horizontal(data2plot, chartname, ourfilename)
+        elif chartsubtype == 'stacked':
+            pygal_bar_stacked(data2plot, chartname, ourfilename)
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -228,32 +327,36 @@ def webhook():
 
         # Compose the response to dialogflow.com
         res = {
-            'speech': 'http://35.196.100.14/static/test.png',
-            #'displayText': 'http://35.196.100.14/static/test.svg',
+            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            #'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
             'messages': [
                 {
-                    "speech": 'Here must be image URL - http://35.196.100.14/static/test.png',
                     'type': 0,
-                    'platform': 'telegram'
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
                 },
                 {
-                    "type": 1,
-                    "platform": "telegram",
-                    "imageUrl": "http://35.196.100.14/static/test.png"
-                },
-                {
-                    "speech": 'Here must be image URL - http://35.196.100.14/static/test.png',
                     'type': 0,
+                    'speech': 'To make another chart type "draw chart" or "restart"'
                 },
                 {
-                    "type": 1,
-                    "platform": "facebook",
-                    "imageUrl": "http://35.196.100.14/static/test.png"
-                },
-                {
-                    "speech": 'Here must be image URL - http://35.196.100.14/static/test.png',
+                    'platform': 'telegram',
                     'type': 0,
-                    'platform': 'facebook'
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'platform': 'telegram',
+                    'type': 0,
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+                {
+                    'platform': 'facebook',
+                    'type': 0,
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'platform': 'facebook',
+                    'type': 0,
+                    'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
             'contextOut': contexts
@@ -267,6 +370,7 @@ def webhook():
         }
 
     return make_response(jsonify(res))
+# ###################### Decorators END ##############################
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000)) # for Heroku, otherwise we get "Error R10 (Boot timeout) -> Web process failed to bind to $PORT within 60 seconds of launch" ; solution: https://jamesmcfadden.co.uk/heroku-web-process-failed-to-bind-to-port-within-60-seconds-of-launch
