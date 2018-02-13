@@ -178,8 +178,9 @@ def pygal_line_stacked(data, chartname, file_name):
 def pygal_pie_basic(data, chartname, file_name):
     pie_chart = pygal.Pie()
     pie_chart.title = chartname
-    for key, value in data.items():
-        pie_chart.add(key, value)
+    for ds in data:
+        for key, value in ds.items():
+            pie_chart.add(key, value)
     pie_chart.render_to_file(file_name + '.svg')
     pie_chart.render_to_png(file_name + '.png')
     return True
@@ -188,8 +189,9 @@ def pygal_pie_basic(data, chartname, file_name):
 def pygal_pie_donut(data, chartname, file_name):
     pie_chart = pygal.Pie(inner_radius=.4)
     pie_chart.title = chartname
-    for key, value in data.items():
-        pie_chart.add(key, value)
+    for ds in data:
+        for key, value in ds.items():
+            pie_chart.add(key, value)
     pie_chart.render_to_file(file_name + '.svg')
     pie_chart.render_to_png(file_name + '.png')
     return True
@@ -198,10 +200,22 @@ def pygal_pie_donut(data, chartname, file_name):
 def pygal_pie_halfpie(data, chartname, file_name):
     pie_chart = pygal.Pie(half_pie=True)
     pie_chart.title = chartname
-    for key, value in data.items():
-        pie_chart.add(key, value)
+    for ds in data:
+        for key, value in ds.items():
+            pie_chart.add(key, value)
     pie_chart.render_to_file(file_name + '.svg')
     pie_chart.render_to_png(file_name + '.png')
+    return True
+
+# Scatter chart
+def pygal_scatter(data, chartname, file_name):
+    xy_chart = pygal.XY(stroke=False)
+    xy_chart.title = chartname
+    for ds in data:
+        for key, value in ds.items():
+            xy_chart.add(key, value)
+    xy_chart.render_to_file(file_name + '.svg')
+    xy_chart.render_to_png(file_name + '.png')
     return True
 
 def mysplit(txt, seps):
@@ -221,6 +235,13 @@ def get_bar_line_data(mychartdata, ds_key):
     ds_name = ''
     result_code = 'ok'
     ds = mychartdata[ds_key]
+    if ds == '':
+        output = [
+            'bad',
+            "Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'",
+            {}
+            ]
+        return output
 
     # user is supposed to have entered smth like 'series C: 4, 4, 5, 5,6' or '4, 4, 5, 5,6' (all ok)
     # but he/she may have entered invalid (non-digit) values  like 'sdsdfsd sddd' or ',, ,,, ,'
@@ -312,10 +333,17 @@ def get_pie_data(mychartdata, ds_key):
     # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
     # a name of this data series and corresponding number in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': 2.0]}
     # in case of invalid input (no numbers) - returns error flag
-    ds_data = []
+    ds_data = 0
     ds_name = ''
     result_code = 'ok'
     ds = mychartdata[ds_key]
+    if ds == '':
+        output = [
+            'bad',
+            "Eh. Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
+            {}
+            ]
+        return output
 
     # user is supposed to have entered smth like 'series C: 4' or just '4' (both ok)
     # but he/she may have entered invalid (non-digit) values  like 'sdsdfsd sddd' or ',, ,,, ,'
@@ -323,11 +351,11 @@ def get_pie_data(mychartdata, ds_key):
 
     # try to split this string by ':"
     # possible results:
-    # 1. input doesn't contain ':' - we'll get a list with 1 value to validate for 1 numbers // '4, 4, 5, 5', ' ', 'sdfsdfsdf sdsdds'
+    # 1. input doesn't contain ':' - we'll get a list with 1 value to validate as a 1 number // '4' , '4, 5, 5', ' ', 'sdfsdfsdf sdsdds'
     # 1.1 also user may have forgotten to enter ':' in a valid input, for eg. 'series C 4' or 'series-500 4' - for now this variant will be considered invalid but later
     # some logics may be added to recognise it as valid
     # 2. input contains 1 ':' - we'll get a list with 2 values, the 1st - ds name, the 2nd - ds data // 'series C: 4', 'sdfsdf: sddd', ':'
-    # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, 4, 5, 5,6 series D: 1, 2, 3, 5,3'
+    # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, series D: 1, 2, 3, 5,3'
     ds_splitted = ds.split(':')
     if len(ds_splitted) == 1:
         ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ' . ', ',', ';', '- ', '/'])
@@ -337,40 +365,35 @@ def get_pie_data(mychartdata, ds_key):
 
     # so we have a part ds_data_part which is supposed to be a number. variants:
     # 1. correct data ('4') - result code 'ok'
-    # 2. completely incorrect data (''; 'sdsdd', 'sds') - result code 'bad'
-    # 3. partly correct data ('4.sd', '2.3, 2.0') - results code 'partly'
+    # 2. completely incorrect data ('', 'sdsdd', '4.sd') - result code 'bad'
+    # 3. partly correct data ('2.3, 2.0', '2.3, sdsd') - results code 'partly'
     # we'll try to convert these data to float numbers, all nondigit values will be substituted with 0
     # in case all series contains only 0s (valid 0s or nondigit values substituted with 0) - result code 'bad'
-    for item in ds_data_part:
-        try:
-            ds_data.append(float(item))
-        except ValueError:
-            ds_data.append(0)
-            result_code = 'partly'
+    # series theoretically can be =0
+    if len(ds_data_part) > 1:
+        result_code = 'partly'
 
-    ds_sum = 0
-    for x in ds_data:
-        ds_sum += x
-
-    if ds_sum == 0:
+    try:
+        ds_data = float(ds_data_part[0])
+    except ValueError:
+        ds_data = 0
         result_code = 'bad'
 
     # so now we have variants with result codes:
-    # 1. 'ok' = valid numbers with or without ds name >> Alright! $data-series-0.original for our #mychart.bar-chart-styles #mychart.chart-types received. Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? If something is wrong please write 'restart' to start afresh
-    # 2. 'partly' = at least some (1) numbers with or without ds name >> Some errors were found in your data. After replacing errors with 0, your data series will look like ... . Add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or let's draw our chart? You can also start afresh (write 'restart')
-    # 3. 'bad' = no numbers (ds name doesn't matter) >> Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'
+    # 1. 'ok' = a valid number with or without ds name
+    # 2. 'partly' = a valid number with or without ds name but user entered >1 value for one ds
+    # 3. 'bad' = empty (after deleting delimiters) or non-numeric value
     # p.s. some additional data for response compilation - chart type and subtype
     # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
     chart_type = mychartdata['chart-types']
-    if 'bar-chart-styles' in mychartdata:
-        chart_subtype = mychartdata['bar-chart-styles']
-    elif 'line-chart-styles' in mychartdata:
-        chart_subtype = mychartdata['line-chart-styles']
+    chart_subtype = '[undefined]'
+    if 'pie-chart-styles' in mychartdata:
+        chart_subtype = mychartdata['pie-chart-styles']
     chart_name = mychartdata['chartname']
 
     # we also need to check for previous validated series to display them to user
     if 'validated_ds' in mychartdata:
-        already_validated_data = mychartdata['validated_ds'] # is a list of dictionaries "validated_ds": [{"": [1, 2, 3]}, {"": [0, 9, 3]}]
+        already_validated_data = mychartdata['validated_ds'] # is a list of dictionaries "validated_ds": [{"": 1 }, {"": 9}]
         already_validated_data_nice = ' (in addition to series '
         for x in range(len(already_validated_data)):
             for key, value in already_validated_data[x].items():
@@ -381,6 +404,7 @@ def get_pie_data(mychartdata, ds_key):
     else:
         already_validated_data_nice = '. '
 
+
     if result_code == 'ok':
         output = [
             'ok',
@@ -390,13 +414,13 @@ def get_pie_data(mychartdata, ds_key):
     elif result_code == 'partly':
         output = [
             'partly',
-            "Some errors were found in your data. After replacing those errors with 0, we will get '" + ds_name + ": " + str(ds_data) + already_validated_data_nice + "Start afresh (write 'restart'), add another data series (please follow the same format, 'Fibonacci: 1, 2, 4, 8, 16, 32') or draw a chart?",
+            "Some errors were found in your data (maybe >1 values for data series). After correction we will get '" + ds_name + ": " + str(ds_data) + already_validated_data_nice + "Start afresh (write 'restart'), add another data series (please follow the same format, 'Series1: 55.2') or draw a chart?",
             {ds_name: ds_data}
             ]
     else:
         output = [
             'bad',
-            "Invalid data series. Please enter correct data in format 'Series name (optionally): series data', for eg. 'Fibonacci: 1, 2, 4, 8, 16, 32'",
+            "Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
             {}
             ]
 
@@ -550,24 +574,13 @@ def webhook():
         myinput = req.get('result').get('parameters').get('inputdata')
 
         res = {
-            'speech': 'http://35.196.100.14/static/test.png',
-            #'displayText': 'http://35.196.100.14/static/test.svg',
-            'messages': [
-                {
-                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
-                    'type': 0,
-                    'platform': 'telegram'
-                },
-                {
-                    "type": 1,
-                    "platform": "telegram",
-                    "imageUrl": "https://iuriid.github.io/img/fc-1.jpg"
-                },
-                {
-                    "speech": 'Here must be image URL - https://iuriid.github.io/img/fc-1.jpg',
-                    'type': 0,
-                }
-            ],
+            'speech': 'https://iuriid.github.io/img/fc-1.jpg',
+            'displayText': 'https://iuriid.github.io/img/fc-1.jpg',
+            "data": {
+                "telegram": {
+                        "photo": "https://iuriid.github.io/img/fc-1.jpg"
+                    }
+            },
             'contextOut': req['result']['contexts']
         }
 
@@ -600,7 +613,8 @@ def webhook():
         # Compose the response to dialogflow.com
         res = {
             'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            #'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            # messages for web demo
             'messages': [
                 {
                     'type': 0,
@@ -609,28 +623,38 @@ def webhook():
                 {
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
-                },
-                {
-                    'platform': 'telegram',
-                    'type': 0,
-                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'platform': 'telegram',
-                    'type': 0,
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                },
-                {
-                    'platform': 'facebook',
-                    'type': 0,
-                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'platform': 'facebook',
-                    'type': 0,
-                    'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
+            # messages for Facebook, Telegram etc
+            "data": {
+                "facebook": [
+                    {
+                        "attachment": {
+                            "type": "image",
+                            "payload": {
+                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
+                            }
+                        }
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ],
+                "telegram": [
+                    {
+                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ]
+            },
             'contextOut': contexts
         }
 
@@ -664,6 +688,7 @@ def webhook():
         res = {
             'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
             'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            # messages for web demo
             'messages': [
                 {
                     'type': 0,
@@ -672,28 +697,112 @@ def webhook():
                 {
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
-                },
+                }
+            ],
+            # messages for Facebook, Telegram etc
+            "data": {
+                "facebook": [
+                    {
+                        "attachment": {
+                            "type": "image",
+                            "payload": {
+                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
+                            }
+                        }
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ],
+                "telegram": [
+                    {
+                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ]
+            },
+            'contextOut': contexts
+        }
+
+    # PlotBot - drawing PIE charts webhook
+    elif action == 'plotbot-pie':
+        # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
+        contexts = req.get('result').get('contexts')
+        for context in contexts:
+            if context['name'] == 'mychart':
+                charttype = context['parameters']['chart-types']
+                chartsubtype = context['parameters']['pie-chart-styles']
+                data2plot = context['parameters']['validated_ds'] # is a list if dictionaries for eg. [{"fibo": 1}, {"next": 3}]
+                chartname = context['parameters']['chartname']
+
+        # to name our chart we'll use last 12 digist of 'id' from JSON got from dialogflow
+        ourfilename = 'static/' + req.get('id')[-12:]
+
+        if chartsubtype == 'basic':
+            pygal_pie_basic(data2plot, chartname, ourfilename)
+        elif chartsubtype == 'donut':
+            pygal_pie_donut(data2plot, chartname, ourfilename)
+        elif chartsubtype == 'halfpie':
+            pygal_pie_halfpie(data2plot, chartname, ourfilename)
+
+        # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
+        for context in contexts:
+            if context['name'] == 'mychart' or context['name'] == 'ready2plot':
+                context['lifespan'] = 0
+
+        # Compose the response to dialogflow.com
+        res = {
+            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            # messages for web demo
+            'messages': [
                 {
-                    'platform': 'telegram',
                     'type': 0,
                     'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
                 },
                 {
-                    'platform': 'telegram',
-                    'type': 0,
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                },
-                {
-                    'platform': 'facebook',
-                    'type': 0,
-                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'platform': 'facebook',
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
+            # messages for Facebook, Telegram etc
+            "data": {
+                "facebook": [
+                    {
+                        "attachment": {
+                            "type": "image",
+                            "payload": {
+                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
+                            }
+                        }
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ],
+                "telegram": [
+                    {
+                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
+                    },
+                    {
+                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                    },
+                    {
+                        "text": 'To make another chart type "draw chart" or "restart"'
+                    }
+                ]
+            },
             'contextOut': contexts
         }
 
@@ -710,3 +819,16 @@ def webhook():
 if __name__ == '__main__':
     #port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0')#, port=port)
+
+'''
+{
+    'platform': 'facebook',
+    'type': 0,
+    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+},
+{
+    'platform': 'facebook',
+    'type': 0,
+    'speech': 'To make another chart type "draw chart" or "restart"'
+}'''
+

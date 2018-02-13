@@ -114,74 +114,238 @@ def pygal_pie_halfpie(data, chartname, file_name):
     pie_chart.render_to_png(file_name + '.png')
     return True
 
+def get_pie_data(mychartdata, ds_key):
+    # Function is used to parse and validate data series for pie charts
+    # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
+    # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
+    # a name of this data series and corresponding number in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': 2.0]}
+    # in case of invalid input (no numbers) - returns error flag
+    ds_data = 0
+    ds_name = ''
+    result_code = 'ok'
+    ds = mychartdata[ds_key]
+    if ds == '':
+        output = [
+            'bad',
+            "Eh. Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
+            {}
+            ]
+        return output
+
+    # user is supposed to have entered smth like 'series C: 4' or just '4' (both ok)
+    # but he/she may have entered invalid (non-digit) values  like 'sdsdfsd sddd' or ',, ,,, ,'
+    # or semi-correct data, for eg. with several data series like 'A: 3, B: 3, C: 4' (at this stage he is supposed to enter data series one at a time)
+
+    # try to split this string by ':"
+    # possible results:
+    # 1. input doesn't contain ':' - we'll get a list with 1 value to validate as a 1 number // '4' , '4, 5, 5', ' ', 'sdfsdfsdf sdsdds'
+    # 1.1 also user may have forgotten to enter ':' in a valid input, for eg. 'series C 4' or 'series-500 4' - for now this variant will be considered invalid but later
+    # some logics may be added to recognise it as valid
+    # 2. input contains 1 ':' - we'll get a list with 2 values, the 1st - ds name, the 2nd - ds data // 'series C: 4', 'sdfsdf: sddd', ':'
+    # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, series D: 1, 2, 3, 5,3'
+    ds_splitted = ds.split(':')
+    if len(ds_splitted) == 1:
+        ds_data_part = mysplit(ds_splitted[0].strip(), [' ', ' . ', ',', ';', '- ', '/'])
+    else:
+        ds_name = ds_splitted[0].strip() # any values including empty
+        ds_data_part = mysplit(ds_splitted[1].strip(), [' ', ' . ', ',', ';', '- ', '/'])
+
+    # so we have a part ds_data_part which is supposed to be a number. variants:
+    # 1. correct data ('4') - result code 'ok'
+    # 2. completely incorrect data ('', 'sdsdd', '4.sd') - result code 'bad'
+    # 3. partly correct data ('2.3, 2.0', '2.3, sdsd') - results code 'partly'
+    # we'll try to convert these data to float numbers, all nondigit values will be substituted with 0
+    # in case all series contains only 0s (valid 0s or nondigit values substituted with 0) - result code 'bad'
+    # series theoretically can be =0
+    if len(ds_data_part) > 1:
+        result_code = 'partly'
+
+    try:
+        ds_data = float(ds_data_part[0])
+    except ValueError:
+        ds_data = 0
+        result_code = 'bad'
+
+    # so now we have variants with result codes:
+    # 1. 'ok' = a valid number with or without ds name
+    # 2. 'partly' = a valid number with or without ds name but user entered >1 value for one ds
+    # 3. 'bad' = empty (after deleting delimiters) or non-numeric value
+    # p.s. some additional data for response compilation - chart type and subtype
+    # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
+    chart_type = mychartdata['chart-types']
+    chart_subtype = '[undefined]'
+    if 'pie-chart-styles' in mychartdata:
+        chart_subtype = mychartdata['pie-chart-styles']
+    chart_name = mychartdata['chartname']
+
+    # we also need to check for previous validated series to display them to user
+    if 'validated_ds' in mychartdata:
+        already_validated_data = mychartdata['validated_ds'] # is a dictionary with a dictionary as value {"validated_ds": {"ser1": 1, "": 9}}
+        already_validated_data_nice = ' (in addition to series '
+        x = 0
+        for key, value in already_validated_data.items():
+            if x>0:
+                already_validated_data_nice += ', '
+            already_validated_data_nice += '"{}": {}'.format(key, value)
+        already_validated_data_nice += '). '
+    else:
+        already_validated_data_nice = '. '
+
+    if result_code == 'ok':
+        output = [
+            'ok',
+            'Alright! Series "' + ds_name + '": ' + str(ds_data) + " for our " + chart_subtype + " " + chart_type + " entitled '" + chart_name + "' received" + already_validated_data_nice + "Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
+            {ds_name: ds_data}
+        ]
+    elif result_code == 'partly':
+        output = [
+            'partly',
+            "Some errors were found in your data (maybe >1 values for data series). After correction we will get '" + ds_name + ": " + str(ds_data) + already_validated_data_nice + "Start afresh (write 'restart'), add another data series (please follow the same format, 'Series1: 55.2') or draw a chart?",
+            {ds_name: ds_data}
+            ]
+    else:
+        output = [
+            'bad',
+            "Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
+            {}
+            ]
+
+    return output
+
+
+
 myjson = {
-  "id": "0ec519b1-c3bb-4acb-91eb-b9e97b1d795a",
-  "timestamp": "2018-02-11T21:16:06.278Z",
+  "id": "0b7f869a-fbb6-404a-a300-9bca46560cf5",
+  "timestamp": "2018-02-13T10:28:42.379Z",
   "lang": "en",
   "result": {
     "source": "agent",
-    "resolvedQuery": "2 3 4",
-    "action": "data-series-0",
+    "resolvedQuery": "sdfsdf: 233",
+    "action": "data-series-pie",
     "actionIncomplete": False,
     "parameters": {
-      "data-series-0": "2 3 4"
+      "data-series-0": "sdfsdf"
     },
     "contexts": [
       {
-        "name": "mychart",
+        "name": "piechart-basicstyle-followup",
         "parameters": {
-          "bar-chart-styles": "basic",
-          "chartname": "sdf",
-          "validated_ds":
-            {
-              "1": 2,
-              "2": 30
-            }
-          ,
-          "chart-types": "bar chart",
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
           "chart-types.original": "",
-          "data-series-0.original": "2 3 4",
-          "data-series-0": "2 3 4",
-          "chartname.original": "sdf",
-          "bar-chart-styles.original": "horizontal"
+          "pie-chart-styles.original": "basic",
+          "data-series-0.original": "sdfsdf",
+          "data-series-0": "sdfsdf"
         },
-        "lifespan": 5
+        "lifespan": 2
       },
       {
-        "name": "barchart-basicstyle-followup",
+        "name": "mychart",
         "parameters": {
-          "bar-chart-styles": "horizontal",
-          "chart-types": "bar chart",
+          "chartname": "sdfsdf",
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "pie-chart-styles.original": "basic",
           "chart-types.original": "",
-          "data-series-0.original": "2 3 4",
-          "data-series-0": "2 3 4",
-          "bar-chart-styles.original": "horizontal"
+          "data-series-0.original": "sdfsdf",
+          "data-series-0": "sdfsdf",
+          "chartname.original": "sdfsdf"
+        },
+        "lifespan": 5
+      }
+    ],
+    "metadata": {
+      "intentId": "91c8fc49-c520-4842-a597-7248e0904fc1",
+      "webhookUsed": "true",
+      "webhookForSlotFillingUsed": "false",
+      "webhookResponseTime": 78,
+      "intentName": "pie.chart - all.styles - add.data"
+    },
+    "fulfillment": {
+      "speech": "Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
+      "displayText": "Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'",
+      "messages": [
+        {
+          "type": 0,
+          "speech": "Invalid data series. Please enter correct data in format 'series name (optionally): one number', for eg. 'Product 1: 63' or just '63'"
+        }
+      ]
+    },
+    "score": 0.8700000047683716
+  },
+  "status": {
+    "code": 200,
+    "errorType": "success",
+    "webhookTimedOut": False
+  },
+  "sessionId": "599970b1-d135-4ad5-a64d-941435705c53"
+}
+
+mypie = {
+  "id": "7fdd226b-f5a6-48f1-bcbb-8094000191d4",
+  "timestamp": "2018-02-13T10:19:32.715Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "6565",
+    "action": "data-series-pie",
+    "actionIncomplete": False,
+    "parameters": {
+      "data-series-0": "6565"
+    },
+    "contexts": [
+      {
+        "name": "piechart-basicstyle-followup",
+        "parameters": {
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "chart-types.original": "",
+          "pie-chart-styles.original": "usual",
+          "data-series-0.original": "6565",
+          "data-series-0": "6565"
+        },
+        "lifespan": 2
+      },
+      {
+        "name": "mychart",
+        "parameters": {
+          "chartname": "sdfsdf",
+          "pie-chart-styles": "basic",
+          "chart-types": "pie chart",
+          "validated_ds": {
+            "wanne": 5050
+          },
+          "pie-chart-styles.original": "usual",
+          "chart-types.original": "",
+          "data-series-0.original": "sees: 6565",
+          "data-series-0": "6565",
+          "chartname.original": "sdfsdf"
         },
         "lifespan": 5
       },
       {
         "name": "ready2plot",
         "parameters": {
-          "data-series-0.original": "2 3 4",
-          "data-series-0": "2 3 4"
+          "data-series-0.original": "6565",
+          "data-series-0": "6565"
         },
         "lifespan": 5
       }
     ],
     "metadata": {
-      "intentId": "52ed7917-6920-4c68-b6e7-55ef6562d6ce",
+      "intentId": "91c8fc49-c520-4842-a597-7248e0904fc1",
       "webhookUsed": "true",
       "webhookForSlotFillingUsed": "false",
       "webhookResponseTime": 77,
-      "intentName": "bar.chart - all.styles - add.data"
+      "intentName": "pie.chart - all.styles - add.data"
     },
     "fulfillment": {
-      "speech": "Alright! Series \"\": [2.0, 3.0, 4.0] for our horizontal bar chart entitled 'sdf' received (in addition to series \"\": [2.0, 3.0, 4.0, 5.0]). Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
-      "displayText": "Alright! Series \"\": [2.0, 3.0, 4.0] for our horizontal bar chart entitled 'sdf' received (in addition to series \"\": [2.0, 3.0, 4.0, 5.0]). Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
+      "speech": "Alright! Series \"\": 6565.0 for our basic pie chart entitled 'sdfsdf' received. Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
+      "displayText": "Alright! Series \"\": 6565.0 for our basic pie chart entitled 'sdfsdf' received. Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
       "messages": [
         {
           "type": 0,
-          "speech": "Alright! Series \"\": [2.0, 3.0, 4.0] for our horizontal bar chart entitled 'sdf' received (in addition to series \"\": [2.0, 3.0, 4.0, 5.0]). Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh"
+          "speech": "Alright! Series \"\": 6565.0 for our basic pie chart entitled 'sdfsdf' received. Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh"
         }
       ]
     },
@@ -195,28 +359,16 @@ myjson = {
   "sessionId": "599970b1-d135-4ad5-a64d-941435705c53"
 }
 
-contexts = myjson.get('result').get('contexts')
-for context in contexts:
+def mysplit(txt, seps):
+    # split input string by a list of possible separators, for eg. '4 - 4  5/ 5,6' >> ['4', '4', '5', '5', '6']
+    default_sep = seps[0]
+    for sep in seps[1:]:
+        txt = txt.replace(sep, default_sep)
+    return [i.strip() for i in txt.split()]
+
+extract = mypie['result']['contexts']
+for context in extract:
     if context['name'] == 'mychart':
-        charttype = context['parameters']['chart-types']
-        chartsubtype = context['parameters']['bar-chart-styles']
-        data2plot = context['parameters'][
-            'validated_ds']  # is a list for eg. [{"fibo": [1, 2, 4, 8]}, {"next": [2, 3, 4, 5]}]
-        chartname = context['parameters']['chartname']
+        mychartdata = context['parameters']
 
-# to name our chart we'll use last 12 digist of 'id' from JSON got from dialogflow
-ourfilename = 'static/' + myjson.get('id')[-12:]
-print('charttype - ' + charttype)
-print('chartsubtype - ' + chartsubtype)
-print('data2plot - ' + str(data2plot))
-print('chartname - ' + chartname)
-
-if chartsubtype == 'basic':
-    print('basic!')
-    pygal_pie_basic(data2plot, chartname, ourfilename)
-elif chartsubtype == 'horizontal':
-    print('horizontal!')
-    pygal_pie_donut(data2plot, chartname, ourfilename)
-elif chartsubtype == 'stacked':
-    print('stacked!')
-    pygal_pie_halfpie(data2plot, chartname, ourfilename)
+print(get_pie_data(mychartdata, 'data-series-0.original'))
