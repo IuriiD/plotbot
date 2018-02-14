@@ -569,21 +569,6 @@ def webhook():
         }
 
 
-    # TestBot Webhook action - testing stuff
-    elif action == 'testbot':
-        myinput = req.get('result').get('parameters').get('inputdata')
-
-        res = {
-            'speech': 'https://iuriid.github.io/img/fc-1.jpg',
-            'displayText': 'https://iuriid.github.io/img/fc-1.jpg',
-            "data": {
-                "telegram": {
-                        "photo": "https://iuriid.github.io/img/fc-1.jpg"
-                    }
-            },
-            'contextOut': req['result']['contexts']
-        }
-
     # PlotBot - drawing BAR charts webhook
     elif action == 'plotbot-bar':
         # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
@@ -614,8 +599,10 @@ def webhook():
         res = {
             'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
             'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            # messages for web demo
+            'source': 'plotbot-bar-webhook',
+
             'messages': [
+                # messages for web demo
                 {
                     'type': 0,
                     'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
@@ -623,38 +610,37 @@ def webhook():
                 {
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Facebook
+                {
+                    'type': 3,
+                    'platform': 'facebook',
+                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Telegram - for unknown (14.02.18) reason can't return a type3 (image) message to Telegram
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
-            # messages for Facebook, Telegram etc
-            "data": {
-                "facebook": [
-                    {
-                        "attachment": {
-                            "type": "image",
-                            "payload": {
-                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
-                            }
-                        }
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ],
-                "telegram": [
-                    {
-                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ]
-            },
             'contextOut': contexts
         }
 
@@ -688,8 +674,10 @@ def webhook():
         res = {
             'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
             'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            # messages for web demo
+            'source': 'plotbot-bar-webhook',
+
             'messages': [
+                # messages for web demo
                 {
                     'type': 0,
                     'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
@@ -697,38 +685,37 @@ def webhook():
                 {
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Facebook
+                {
+                    'type': 3,
+                    'platform': 'facebook',
+                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Telegram - for unknown (14.02.18) reason can't return a type3 (image) message to Telegram
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
-            # messages for Facebook, Telegram etc
-            "data": {
-                "facebook": [
-                    {
-                        "attachment": {
-                            "type": "image",
-                            "payload": {
-                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
-                            }
-                        }
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ],
-                "telegram": [
-                    {
-                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ]
-            },
             'contextOut': contexts
         }
 
@@ -750,8 +737,8 @@ def webhook():
             pygal_pie_basic(data2plot, chartname, ourfilename)
         elif chartsubtype == 'donut':
             pygal_pie_donut(data2plot, chartname, ourfilename)
-        elif chartsubtype == 'halfpie':
-            pygal_pie_halfpie(data2plot, chartname, ourfilename)
+        elif chartsubtype == 'half pie':
+            pygal_pie_halfpie(data2plot, chartname, ourfilename) 
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -762,8 +749,10 @@ def webhook():
         res = {
             'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
             'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            # messages for web demo
+            'source': 'plotbot-bar-webhook',
+
             'messages': [
+                # messages for web demo
                 {
                     'type': 0,
                     'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
@@ -771,38 +760,37 @@ def webhook():
                 {
                     'type': 0,
                     'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Facebook
+                {
+                    'type': 3,
+                    'platform': 'facebook',
+                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Telegram - for unknown (14.02.18) reason can't return a type3 (image) message to Telegram
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
                 }
             ],
-            # messages for Facebook, Telegram etc
-            "data": {
-                "facebook": [
-                    {
-                        "attachment": {
-                            "type": "image",
-                            "payload": {
-                                "url": 'http://35.196.100.14/' + ourfilename + '.png'
-                            }
-                        }
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ],
-                "telegram": [
-                    {
-                        "photo": 'http://35.196.100.14/' + ourfilename + '.png'
-                    },
-                    {
-                        "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                    },
-                    {
-                        "text": 'To make another chart type "draw chart" or "restart"'
-                    }
-                ]
-            },
             'contextOut': contexts
         }
 
