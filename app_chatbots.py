@@ -1,6 +1,7 @@
 # this is the version working at 'chatbots' VM in GC
 
 import os
+import re
 import json
 import requests
 from flask import Flask, request, make_response, jsonify
@@ -225,6 +226,30 @@ def mysplit(txt, seps):
         txt = txt.replace(sep, default_sep)
     return [i.strip() for i in txt.split()]
 
+def scatter_data_parse(ds_splitted):
+    # Function takes what is supposed to be the numeric part of data series for scatter plot (a list of strings,
+    # for eg. '(1, 2), (3, 4)') and returns a list of lists, each containing pairs of strings that will be further
+    # validated as numbers
+    # 1. Replace possible [] or {} brackets with ()
+    ds_data_part = []
+    ds_data_str = ds_splitted.replace('[', '(')
+    ds_data_str = ds_data_str.replace(']', ')')
+    ds_data_str = ds_data_str.replace('{', '(')
+    ds_data_str = ds_data_str.replace('}', ')')
+    print('ds_data_str: ', str(ds_data_str))
+
+    # 2. Now check if there are '(' in our string; there's one possible correct variant without '()": with only 1 tuple (2 numbers)
+    if not '(' in ds_data_str:
+        # take the first 2 values (supposed to be numbers)
+        ds_data_part.append(mysplit(ds_data_str.strip(), [' ', ' . ', ',', ';', '- ', '/'])[:2])
+        print('Here0')
+    else:
+        # split our string by blocks in "(...)" brackets
+        ds_data_strtuples = re.findall("\((.*?)\)", ds_data_str)
+        for pair in ds_data_strtuples:
+            ds_data_part.append(mysplit(pair.strip(), [' ', ' . ', ',', ';', '- ', '/']))
+    return(ds_data_part)
+
 def get_bar_line_data(mychartdata, ds_key):
     # Function is used to parse and validate data series for bar and line charts
     # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
@@ -426,6 +451,114 @@ def get_pie_data(mychartdata, ds_key):
 
     return output
 
+def get_scatter_data(mychartdata, ds_key):
+    # Function is used to parse and validate data series for scatter plots
+    # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
+    # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
+    # a name of this data series and corresponding numbers in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': (2.0, 3.0), (2.5, 5.2), (2.9, 10.0)]}
+    # so for a scatter plot user is supposed to have entered at least 1 tuple of numbers (2 numbers in round brackets) (optionally also a data series name at the beginning separated with ':')
+    # [] or {} brackets are also allowed
+    # in case of invalid input (no numbers) - returns error flag
+    ds_data = []
+    ds_name = ''
+    result_code = 'ok'
+    ds = mychartdata[ds_key]
+    if ds == '':
+        output = [
+            'bad',
+            "Eh. Invalid input. Please enter your data series (one at a time) in format 'series name (optionally): series data', for eg. 'TheBigOnes: (1, 2), (2, 4), (3, 5)' or just '(1, 2), (2, 4), (3, 5)",
+            {}
+            ]
+        return output
+
+    # user is supposed to have entered smth like 'series C: (2, 3), (2, 5), (2, 10)' or just '(2, 3), (2, 5), (2, 10)' (both ok; brackets may be (), [], {}; any delimiters between numbers and tuples may be used)
+    # but he/she may have entered invalid (non-digit) values  like 'sdsdfsd sddd' or ',, ,,, ,'
+    # or semi-correct data, for eg. with several data series like 'A: (2, 3), B: (4, 6), C: (10, 30)' (at this stage he is supposed to enter data series one at a time)
+
+    # try to split this string by ':"
+    # possible results:
+    # 1. input doesn't contain ':' - we'll get a list with 1 value to validate as a 1 number // '4, 5' , '(4 5)', '(2, 3), (2, 5), (2, 10)', ' ', 'sdfsdfsdf sdsdds'
+    # 1.1 also user may have forgotten to enter ':' in a valid input, for eg. 'series C 4' or 'series-500 4' - for now this variant will be considered invalid but later
+    # some logics may be added to recognise it as valid
+    # 2. input contains 1 ':' - we'll get a list with 2 values, the 1st - ds name, the 2nd - ds data // 'series C: 4', 'sdfsdf: sddd', ':'
+    # 3. input contains >1 ':' - we'll get a list with >2 values, the 1st will be ds name, the 2nd - ds data, all the rest will be discarded // 'series C: 4, series D: 1, 2, 3, 5,3'
+    ds_splitted = ds.split(':')
+
+    if len(ds_splitted) == 1:
+        ds_data_part = scatter_data_parse(ds_splitted[0])
+    else:
+        ds_name = ds_splitted[0].strip()  # any values including empty
+        ds_data_part = scatter_data_parse(ds_splitted[1])
+
+    # so we have a part ds_data_part (a list of lists, each with 2 strings supposed to be numbers). variants:
+    # 1. correct data (['4', '5']) - result code 'ok'
+    # 2. completely incorrect data ([''], ['sdsdd'], ['4.sd'], ['2.3', 'abs']) - result code 'bad'
+    # 3. partly correct data (['2', '3'], ['a', 'b']) - results code 'partly'
+    # we'll try to convert these data to float numbers, all nondigit values will be substituted with 0
+    # in case all series contains only 0s (valid 0s or nondigit values substituted with 0) - result code 'bad'
+    floattuple = []
+    for strtuple in ds_data_part:
+        for item in strtuple:
+            try:
+                floattuple.append(float(item))
+            except ValueError:
+                floattuple.append(0)
+                result_code = 'partly'
+        ds_data.append(tuple(floattuple))
+        floattuple = []
+
+    ds_sum = 0
+    for everytuple in ds_data:
+        for item in everytuple:
+            ds_sum += item
+
+    if ds_sum == 0:
+        result_code = 'bad'
+
+    # so now we have variants with result codes:
+    # 1. 'ok' = a valid number with or without ds name
+    # 2. 'partly' = a valid number with or without ds name but user entered >1 value for one ds
+    # 3. 'bad' = empty (after deleting delimiters) or non-numeric value
+    # p.s. some additional data for response compilation - chart type and subtype
+    # We'll return [result_code][message][validated_data_series as dictionary {ds_name: ds_data}]
+    chart_type = mychartdata['chart-types']
+    chart_name = mychartdata['chartname']
+
+    # we also need to check for previous validated series to display them to user
+    if 'validated_ds' in mychartdata:
+        already_validated_data = mychartdata['validated_ds'] # is a list of dictionaries "validated_ds": [{"": 1 }, {"": 9}]
+        already_validated_data_nice = ' (in addition to series '
+        for x in range(len(already_validated_data)):
+            for key, value in already_validated_data[x].items():
+                if x>0:
+                    already_validated_data_nice += ', '
+                already_validated_data_nice += '"{}": {}'.format(key, value)
+        already_validated_data_nice += '). '
+    else:
+        already_validated_data_nice = '. '
+
+
+    if result_code == 'ok':
+        output = [
+            'ok',
+            'Alright! Series "' + ds_name + '": ' + str(ds_data) + " for our " + chart_type + " entitled '" + chart_name + "' received" + already_validated_data_nice + "Please add another data series or may I draw our chart? If something is wrong please write 'restart' to start afresh",
+            {ds_name: ds_data}
+        ]
+    elif result_code == 'partly':
+        output = [
+            'partly',
+            "Some errors were found in your data. After replacing those errors with 0, we will get '" + ds_name + ": " + str(ds_data) + already_validated_data_nice + "Start afresh (write 'restart'), add another data series (please follow the same format, 'TheBigOnes: (1, 2), (2, 4), (3, 5)') or draw a chart?",
+            {ds_name: ds_data}
+            ]
+    else:
+        output = [
+            'bad',
+            "Invalid data series. Please enter correct data in format 'series name (optionally): series data', for eg. 'TheBigOnes: (1, 2), (2, 4), (3, 5)' or just '(1, 2), (2, 4), (3, 5)'",
+            {}
+            ]
+
+    return output
+
 # ###################### Plotbot Functions END ##############################
 
 # ###################### Decorators ##############################
@@ -524,7 +657,6 @@ def webhook():
 
         # get and try to parse and validate data series, in case it's invalid - return error message
         validation_result = get_pie_data(mychartdata, 'data-series-0.original')
-        ####################### Checked up to here
 
         # Compose the response to dialogflow.com
         # Depending on validation results we need to update contexts
@@ -568,6 +700,67 @@ def webhook():
             'contextOut': outputcontext
         }
 
+    # PlotBot - input validation action for pie chart (user is supposed to enter 1 or several series in format <'series name' (optionally): only 1 number>)
+    elif action == 'data-series-scatter':
+        #  get 'contexts'
+        contexts = req.get('result').get('contexts')
+        print('Webhook - data-series-scatter')
+
+        # from the 1st context (supposed to be 'mychart') get 'parameters'
+        for context in contexts:
+            if context['name'] == 'mychart':
+                mychartdata = context.get('parameters')
+        print('mychartdata: ' + str(mychartdata))
+
+        # get and try to parse and validate data series, in case it's invalid - return error message
+        validation_result = get_scatter_data(mychartdata, 'data-series-0.original')
+        print('validation_result: ' + str(validation_result))
+
+        # Compose the response to dialogflow.com
+        # Depending on validation results we need to update contexts
+        # After triggering 'add-series-XX' intent in DF a context 'ready2plot' is created which allows to proceed to plotting
+        # If data entered by user is invalid and if no previous valid data exists in context 'mychart' in key 'validated_ds'
+        # then lifespan for 'ready2plot' context should be set to 0 (no plotting allowed until at least 1 valid DS is entered)
+        # If this is the 1st time that this validation webhook is triggered - create a key 'validated_ds' in context 'mychart'
+        # and save validated DS in it
+
+        # get existing contexts
+        outputcontext = contexts
+        # print('Old contexts: ' + str(outputcontext))
+
+        # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
+        if validation_result[0] == 'ok' or validation_result[0] == 'partly':
+            print('Here1')
+            for context in outputcontext:
+                if context['name'] == 'mychart':
+                    if 'validated_ds' in context['parameters']:
+                        print('Here2')
+                        print(validation_result[2])
+                        context['parameters']['validated_ds'].append(validation_result[2])
+                        print(context['parameters']['validated_ds'])
+                    else:
+                        print('Here3')
+                        print(validation_result[2])
+                        context['parameters'].update({'validated_ds': [validation_result[2]]})
+                        print(context['parameters']['validated_ds'])
+        else:
+            # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
+            print('Here4')
+            for context in outputcontext:
+                if context['name'] == 'mychart':
+                    if not 'validated_ds' in context['parameters']:
+                        print('Here5')
+                        for anothercontext in outputcontext:
+                            if anothercontext['name'] == 'ready2plot':
+                                anothercontext['lifespan'] = 0
+
+        # print('New contexts: '+ str(outputcontext))
+
+        res = {
+            'speech': validation_result[1],
+            'displayText': validation_result[1],
+            'contextOut': outputcontext
+        }
 
     # PlotBot - drawing BAR charts webhook
     elif action == 'plotbot-bar':
@@ -738,7 +931,77 @@ def webhook():
         elif chartsubtype == 'donut':
             pygal_pie_donut(data2plot, chartname, ourfilename)
         elif chartsubtype == 'half pie':
-            pygal_pie_halfpie(data2plot, chartname, ourfilename) 
+            pygal_pie_halfpie(data2plot, chartname, ourfilename)
+
+        # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
+        for context in contexts:
+            if context['name'] == 'mychart' or context['name'] == 'ready2plot':
+                context['lifespan'] = 0
+
+        # Compose the response to dialogflow.com
+        res = {
+            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+            'source': 'plotbot-bar-webhook',
+
+            'messages': [
+                # messages for web demo
+                {
+                    'type': 0,
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Facebook
+                {
+                    'type': 3,
+                    'platform': 'facebook',
+                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                },
+                {
+                    'type': 0,
+                    'platform': 'facebook',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                },
+
+                # messages for Telegram - for unknown (14.02.18) reason can't return a type3 (image) message to Telegram
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
+                },
+                {
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': 'To make another chart type "draw chart" or "restart"'
+                }
+            ],
+            'contextOut': contexts
+        }
+    # PlotBot - drawing SCATTER charts webhook
+    elif action == 'plotbot-scatter':
+        # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
+        contexts = req.get('result').get('contexts')
+        for context in contexts:
+            if context['name'] == 'mychart':
+                charttype = context['parameters']['chart-types']
+                data2plot = context['parameters']['validated_ds'] # is a list if dictionaries for eg. [{"fibo": 1}, {"next": 3}]
+                chartname = context['parameters']['chartname']
+
+        # to name our chart we'll use last 12 digist of 'id' from JSON got from dialogflow
+        ourfilename = 'static/' + req.get('id')[-12:]
+
+        print('Drawing scatter plot...')
+        print('data2plot: ' + str(data2plot))
+        pygal_scatter(data2plot, chartname, ourfilename)
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:

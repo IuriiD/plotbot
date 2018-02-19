@@ -24,28 +24,50 @@ def webhook():
 
     # TestBot Webhook action - testing stuff
     if action == 'testbot':
-        myinput = req.get('result').get('parameters').get('inputdata')
+        myinput = req.get('result').get('parameters').get('input')
 
         res = {
-            'speech': '1 https://iuriid.github.io/img/fc-2.jpg',
-            'displayText': '2 https://iuriid.github.io/img/fc-2.jpg',
+            'speech': '### 1 ###: ' + myinput,
+            'displayText': '### 2 ###: ' + myinput,
             'source': 'mywebhook',
-            # messages for web demo
-            'messages': [
+            "messages": [
                 {
-                    'type': 3, # image
-                    'platform': 'telegram',
-                    'imageUrl': 'https://iuriid.github.io/img/fc-2.jpg'
+                    "speech": "Hello Telegram: " + myinput,
+                    "platform": "telegram",
+                    "type": 0
                 },
                 {
-                    'type': 0, # text
-                    'platform': 'telegram',
-                    'speech': '4 Hello'
+                    "imageUrl": "https://iuriid.github.io/img/chart.types.jpg",
+                    "platform": "telegram",
+                    "type": 3
                 },
                 {
-                    'type': 3,
-                    'platform': 'facebook',
-                    'imageUrl': 'https://iuriid.github.io/img/fc-1.jpg'
+                    "buttons": [
+                        {
+                            "postback": "line",
+                            "text": "Line"
+                        },
+                        {
+                            "postback": "bar",
+                            "text": "Bar"
+                        },
+                        {
+                            "postback": "scatter",
+                            "text": "Scatter"
+                        },
+                        {
+                            "postback": "pie",
+                            "text": "Scatter"
+                        }
+                    ],
+                    "imageUrl": "https://iuriid.github.io/img/chart.types.jpg",
+                    "platform": "telegram",
+                    "title": "Please choose a chart type",
+                    "type": 1
+                },
+                {
+                    "speech": 'Response for web demo: ' + myinput,
+                    "type": 0
                 }
             ]
         }
@@ -63,46 +85,3 @@ def webhook():
 if __name__ == '__main__':
     #port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0')#, port=port)
-
-    '''
-            'speech': 'Response1',
-            'displayText': 'Response2',
-            
-            "data": {
-                "telegram": {
-                        "photo": "https://iuriid.github.io/img/fc-2.jpg"
-                }
-            },    
-    '''
-
-''',
-# messages for Facebook, Telegram etc
-"data": {
-    "facebook": [
-        {
-            "attachment": {
-                "type": "image",
-                "payload": {
-                    "url": 'http://35.196.100.14/' + ourfilename + '.png'
-                }
-            }
-        },
-        {
-            "text": 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-        },
-        {
-            "text": 'To make another chart type "draw chart" or "restart"'
-        }
-    ],
-    "telegram": [
-        {
-            "photo": 'https://iuriid.github.io/img/fc-2.jpg'
-        },
-        {
-            "text": '5 https://iuriid.github.io/img/fc-2.jpg'
-        },
-        {
-            "text": '6 https://iuriid.github.io/img/fc-2.jpg'
-        }
-    ]
-}'''
