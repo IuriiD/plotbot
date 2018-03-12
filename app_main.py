@@ -1,21 +1,24 @@
 # this is the version working at 'chatbots' VM in GC
+# contains webhooks and functions for 2 chatbots:
+# - PlotBot (https://github.com/IuriiD/plotbot ; PB) and
+# - FoodCompositionChatBot (https://github.com/IuriiD/food_composition_chatbot ; CFB)
 
 import os
 import re
 import json
 import requests
 from flask import Flask, request, make_response, jsonify
-from keys import nutrionix_app_id, nutrionix_app_key
 import pygal
-from pygal.style import DefaultStyle
-import cairosvg
+from pygal.style import DefaultStyle # PB
+import cairosvg # PB
+from keys import nutrionix_app_id, nutrionix_app_key # FCB
+import ast # TestBot
 
 app = Flask(__name__)
 
 # ###################### Food Composition Chatbot Functions ##############################
-
 def nutrionix_requests(label_list):
-    ''' Function takes a list of products' labels got using Google Vision API or a label submitted by user and for [products_n] products (in case of user's label products_n=1)
+    ''' Function takes a list of products' labels and for [products_n] products (in case of user's label products_n=1)
         from this list tries to find foods in Nutrionix DB.
         For each food product (for eg., 'sausage') [how_many_terms] quantity of items are requested (for eg., items 'Sausage, Peppers and Onions - 1 serving', 'Sausage - 2, links' for a term 'sausage)
         For each food item (for eg., 'Sausage - 2, links') id, name, [relevance] score and abs. quantity (in grams) of fats, carbohydrates and proteins per serving is requested
@@ -23,8 +26,6 @@ def nutrionix_requests(label_list):
         Returns a dictionary with 3 percentages (for fats, carbohydrates and proteins) and also containing all 'raw' data (food labels, products names, products IDs, fat/carb/prot percent) -
         see structure of 'main_output' dictionary
     '''
-    print('###################### Foodlabel #######################')
-    print('Foodlabel from dialogflow: ' + str(label_list))
     main_output = {}
     products_n = 1
     how_many_terms = 2
@@ -90,172 +91,80 @@ def nutrionix_requests(label_list):
     av_prot = prot_sum / divider
 
     main_output['average_percents'] = [round(av_fat, 2), round(av_carbo, 2), round(av_prot, 2)]
-    print('###################### Main_output #######################')
-    print(main_output)
+
     return(main_output)
 # ###################### Food Composition Chatbot Functions END ##############################
 
-# ###################### Plotbot Functions ##############################
+# ###################### Plotbot Functions ###################################################
 
-# Bar chart - basic
-def pygal_bar_basic(data, chartname, file_name):
-    bar_chart = pygal.Bar()
-    bar_chart = pygal.Bar(print_values=True, style=DefaultStyle(
-        value_font_family='googlefont:Raleway',
-        value_font_size=30,
-        value_colors=('white',)))
-    bar_chart.title = chartname
+def pygal_chart(chart_type, data, chartname, file_name):
+    '''
+        Funtion builds charts using pygal (pygal.org) python charting library and saves them in .svg and .png format
+        Chart types supported: bar_basic, bar_horizontal, bar_stacked, line_basic, line_horizontal, line_stacked,
+        pie_basic, pie_donut, pie_halfpie, scatter - see http://pygal.org/en/stable/documentation/types/index.html
+    '''
+    # Define chart type and set some custom styles
+    if chart_type == 'bar_basic':
+        chart = pygal.Bar()
+        chart = pygal.Bar(print_values=True, style=DefaultStyle(
+            value_font_family='googlefont:Raleway',
+            value_font_size=30,
+            value_colors=('white',)))
+    elif chart_type == 'bar_horizontal':
+        chart = pygal.HorizontalBar()
+        chart = pygal.Bar(print_values=True, style=DefaultStyle(
+            value_font_family='googlefont:Raleway',
+            value_font_size=30,
+            value_colors=('white',)))
+    elif chart_type == 'bar_stacked':
+        chart = pygal.StackedBar()
+        chart = pygal.Bar(print_values=True, style=DefaultStyle(
+            value_font_family='googlefont:Raleway',
+            value_font_size=30,
+            value_colors=('white',)))
+    elif chart_type == 'line_basic':
+        chart = pygal.Line(print_values=True)
+    elif chart_type == 'line_horizontal':
+        chart = pygal.HorizontalLine(print_values=True)
+    elif chart_type == 'line_stacked':
+        chart = pygal.StackedLine(fill=True)
+    elif chart_type == 'pie_basic':
+        chart = pygal.Pie()
+    elif chart_type == 'pie_donut':
+        chart = pygal.Pie(inner_radius=.4)
+    elif chart_type == 'pie_halfpie':
+        chart = pygal.Pie(half_pie=True)
+    elif chart_type == 'scatter':
+        chart = pygal.XY(stroke=False)
+
+    # Add data
+    chart.title = chartname
     for ds in data:
         for key, value in ds.items():
-            bar_chart.add(key, value)
-    bar_chart.render_to_file(file_name + '.svg')
-    bar_chart.render_to_png(file_name + '.png')
-    return True
+            chart.add(key, value)
 
-# Bar chart - horizontal
-def pygal_bar_horizontal(data, chartname, file_name):
-    bar_chart = pygal.HorizontalBar()
-    bar_chart = pygal.HorizontalBar(print_values=True, style=DefaultStyle(
-        value_font_family='googlefont:Raleway',
-        value_font_size=30,
-        value_colors=('white',)))
-    bar_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            bar_chart.add(key, value)
-    bar_chart.render_to_file(file_name + '.svg')
-    bar_chart.render_to_png(file_name + '.png')
-    return True
-
-# Bar chart - stacked
-def pygal_bar_stacked(data, chartname, file_name):
-    bar_chart = pygal.StackedBar()
-    bar_chart = pygal.StackedBar(print_values=True, style=DefaultStyle(
-        value_font_family='googlefont:Raleway',
-        value_font_size=30,
-        value_colors=('white',)))
-    bar_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            bar_chart.add(key, value)
-    bar_chart.render_to_file(file_name + '.svg')
-    bar_chart.render_to_png(file_name + '.png')
-    return True
-
-# Line chart - basic
-def pygal_line_basic(data, chartname, file_name):
-    line_chart = pygal.Line(print_values=True)
-    line_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            line_chart.add(key, value)
-    line_chart.render_to_file(file_name + '.svg')
-    line_chart.render_to_png(file_name + '.png')
-    return True
-
-# Line chart - horizontal
-def pygal_line_horizontal(data, chartname, file_name):
-    line_chart = pygal.HorizontalLine(print_values=True)
-    line_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            line_chart.add(key, value)
-    line_chart.render_to_file(file_name + '.svg')
-    line_chart.render_to_png(file_name + '.png')
-    return True
-
-# Line chart - stacked
-def pygal_line_stacked(data, chartname, file_name):
-    line_chart = pygal.StackedLine(fill=True)
-    line_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            line_chart.add(key, value)
-    line_chart.render_to_file(file_name + '.svg')
-    line_chart.render_to_png(file_name + '.png')
-    return True
-
-# Pie chart - basic
-def pygal_pie_basic(data, chartname, file_name):
-    pie_chart = pygal.Pie()
-    pie_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            pie_chart.add(key, value)
-    pie_chart.render_to_file(file_name + '.svg')
-    pie_chart.render_to_png(file_name + '.png')
-    return True
-
-# Pie chart - donut
-def pygal_pie_donut(data, chartname, file_name):
-    pie_chart = pygal.Pie(inner_radius=.4)
-    pie_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            pie_chart.add(key, value)
-    pie_chart.render_to_file(file_name + '.svg')
-    pie_chart.render_to_png(file_name + '.png')
-    return True
-
-# Pie chart - half pie
-def pygal_pie_halfpie(data, chartname, file_name):
-    pie_chart = pygal.Pie(half_pie=True)
-    pie_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            pie_chart.add(key, value)
-    pie_chart.render_to_file(file_name + '.svg')
-    pie_chart.render_to_png(file_name + '.png')
-    return True
-
-# Scatter chart
-def pygal_scatter(data, chartname, file_name):
-    xy_chart = pygal.XY(stroke=False)
-    xy_chart.title = chartname
-    for ds in data:
-        for key, value in ds.items():
-            xy_chart.add(key, value)
-    xy_chart.render_to_file(file_name + '.svg')
-    xy_chart.render_to_png(file_name + '.png')
+    # Render chart
+    chart.render_to_file(file_name + '.svg')
+    chart.render_to_png(file_name + '.png')
     return True
 
 def mysplit(txt, seps):
-    # split input string by a list of possible separators, for eg. '4 - 4  5/ 5,6' >> ['4', '4', '5', '5', '6']
+    '''
+        Split input string by a list of possible separators, for eg. '4 - 4  5/ 5,6' >> ['4', '4', '5', '5', '6']
+    '''
     default_sep = seps[0]
     for sep in seps[1:]:
         txt = txt.replace(sep, default_sep)
     return [i.strip() for i in txt.split()]
 
-def scatter_data_parse(ds_splitted):
-    # Function takes what is supposed to be the numeric part of data series for scatter plot (a list of strings,
-    # for eg. '(1, 2), (3, 4)') and returns a list of lists, each containing pairs of strings that will be further
-    # validated as numbers
-    # 1. Replace possible [] or {} brackets with ()
-    ds_data_part = []
-    ds_data_str = ds_splitted.replace('[', '(')
-    ds_data_str = ds_data_str.replace(']', ')')
-    ds_data_str = ds_data_str.replace('{', '(')
-    ds_data_str = ds_data_str.replace('}', ')')
-    print('ds_data_str: ', str(ds_data_str))
-
-    # 2. Now check if there are '(' in our string; there's one possible correct variant without '()": with only 1 tuple (2 numbers)
-    if not '(' in ds_data_str:
-        # take the first 2 values (supposed to be numbers)
-        ds_data_part.append(mysplit(ds_data_str.strip(), [' ', ' . ', ',', ';', '- ', '/'])[:2])
-        print('Here0')
-    else:
-        # split our string by blocks in "(...)" brackets
-        ds_data_strtuples = re.findall("\((.*?)\)", ds_data_str)
-        for pair in ds_data_strtuples:
-            ds_data_part.append(mysplit(pair.strip(), [' ', ' . ', ',', ';', '- ', '/']))
-    return(ds_data_part)
-
 def get_bar_line_data(mychartdata, ds_key):
-    # Function is used to parse and validate data series for bar and line charts
-    # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
-    # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
-    # a name of this data series and corresponding numbers in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': [2.0, 4.0, 5.0, 6.0, 6.0]}
-    # in case of invalid input (no numbers) - returns error flag
+    '''
+        Function is used to parse and validate data series for bar and line charts
+        Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
+        'result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
+        a name of this data series and corresponding numbers in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': [2.0, 4.0, 5.0, 6.0, 6.0]}
+        in case of invalid input (no numbers) - returns error flag
+    '''
     ds_data = []
     ds_name = ''
     result_code = 'ok'
@@ -353,11 +262,13 @@ def get_bar_line_data(mychartdata, ds_key):
     return output
 
 def get_pie_data(mychartdata, ds_key):
-    # Function is used to parse and validate data series for pie charts
-    # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
-    # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
-    # a name of this data series and corresponding number in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': 2.0]}
-    # in case of invalid input (no numbers) - returns error flag
+    '''
+        Function is used to parse and validate data series for pie charts
+        Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
+        ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
+        a name of this data series and corresponding number in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': 2.0]}
+        in case of invalid input (no numbers) - returns error flag
+    '''
     ds_data = 0
     ds_name = ''
     result_code = 'ok'
@@ -429,7 +340,6 @@ def get_pie_data(mychartdata, ds_key):
     else:
         already_validated_data_nice = '. '
 
-
     if result_code == 'ok':
         output = [
             'ok',
@@ -451,14 +361,42 @@ def get_pie_data(mychartdata, ds_key):
 
     return output
 
+def scatter_data_parse(ds_splitted):
+    '''
+        Function takes what is supposed to be the numeric part of data series for scatter plot (a list of strings,
+        for eg. '(1, 2), (3, 4)') and returns a list of lists, each containing pairs of strings that will be further
+        validated as numbers
+    '''
+    # 1. Replace possible [] or {} brackets with ()
+    ds_data_part = []
+    ds_data_str = ds_splitted.replace('[', '(')
+    ds_data_str = ds_data_str.replace(']', ')')
+    ds_data_str = ds_data_str.replace('{', '(')
+    ds_data_str = ds_data_str.replace('}', ')')
+    print('ds_data_str: ', str(ds_data_str))
+
+    # 2. Now check if there are '(' in our string; there's one possible correct variant without '()": with only 1 tuple (2 numbers)
+    if not '(' in ds_data_str:
+        # take the first 2 values (supposed to be numbers)
+        ds_data_part.append(mysplit(ds_data_str.strip(), [' ', ' . ', ',', ';', '- ', '/'])[:2])
+        print('Here0')
+    else:
+        # split our string by blocks in "(...)" brackets
+        ds_data_strtuples = re.findall("\((.*?)\)", ds_data_str)
+        for pair in ds_data_strtuples:
+            ds_data_part.append(mysplit(pair.strip(), [' ', ' . ', ',', ';', '- ', '/']))
+    return(ds_data_part)
+
 def get_scatter_data(mychartdata, ds_key):
-    # Function is used to parse and validate data series for scatter plots
-    # Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
-    # ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
-    # a name of this data series and corresponding numbers in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': (2.0, 3.0), (2.5, 5.2), (2.9, 10.0)]}
-    # so for a scatter plot user is supposed to have entered at least 1 tuple of numbers (2 numbers in round brackets) (optionally also a data series name at the beginning separated with ':')
-    # [] or {} brackets are also allowed
-    # in case of invalid input (no numbers) - returns error flag
+    '''
+        Function is used to parse and validate data series for scatter plots
+        Function takes the name of data series (for eg., 'data-series-1.original') and json from webhook
+        ('result' >> 'contexts'['mychart'] >> 'parameters') and returns a dictionary containing
+        a name of this data series and corresponding numbers in format {'data-series-1.original_name': 'B', 'data-series-1.original_data': (2.0, 3.0), (2.5, 5.2), (2.9, 10.0)]}
+        so for a scatter plot user is supposed to have entered at least 1 tuple of numbers (2 numbers in round brackets) (optionally also a data series name at the beginning separated with ':')
+        [] or {} brackets are also allowed
+        in case of invalid input (no numbers) - returns error flag
+    '''
     ds_data = []
     ds_name = ''
     result_code = 'ok'
@@ -537,7 +475,6 @@ def get_scatter_data(mychartdata, ds_key):
     else:
         already_validated_data_nice = '. '
 
-
     if result_code == 'ok':
         output = [
             'ok',
@@ -559,12 +496,134 @@ def get_scatter_data(mychartdata, ds_key):
 
     return output
 
+def validation_response(validation_result, outputcontext):
+    '''
+        Funtion takes results of validation of data entered by user (validation_result) and context passed via
+        webhook (validation_result), and depending on validation_result updates context and composes response
+        for different platforms
+    '''
+    # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
+    if validation_result[0] == 'ok' or validation_result[0] == 'partly':
+        for context in outputcontext:
+            if context['name'] == 'mychart':
+                if 'validated_ds' in context['parameters']:
+                    context['parameters']['validated_ds'].append(validation_result[2])
+                else:
+                    context['parameters'].update({'validated_ds': [validation_result[2]]})
+    else:
+        # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
+        for context in outputcontext:
+            if context['name'] == 'mychart':
+                if not 'validated_ds' in context['parameters']:
+                    for anothercontext in outputcontext:
+                        if anothercontext['name'] == 'ready2plot':
+                            anothercontext['lifespan'] = 0
+
+    # Prepare messages for other platforms besides web demo
+    outputmessages = [
+        {
+            "type": 0,
+            "platform": "telegram",
+            "speech": validation_result[1]
+        }
+    ]
+
+    if validation_result[0] != 'bad':
+        outputmessages.append(
+            {
+                "type": 2,
+                "platform": "telegram",
+                "title": "Add another data series or",
+                "replies": [
+                    "Build chart",
+                    "Restart"
+                ]
+            }
+        )
+
+        outputmessages.append(
+            {
+                "type": 2,
+                "platform": "facebook",
+                "title": "Add another data series or",
+                "replies": [
+                    "Build chart",
+                    "Restart"
+                ]
+            }
+        )
+
+    # Compose response
+    res = {
+        # Response for web-demo
+        'speech': validation_result[
+                      1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
+        'displayText': validation_result[
+                           1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
+        'sourse': 'webhook: data-series-vlidation',
+        # Response for other platforms
+        'messages': outputmessages,
+        'contextOut': outputcontext
+    }
+
+    return res
+
+def chartdone_response(ourfilename, contexts):
+    '''
+        Funtion takes file name of a built chart and updated context and returns a response for different platforms
+    '''
+    res = {
+        'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+        'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+        'source': 'webhook: chart built',
+
+        'messages': [
+            # messages for telegram
+            {
+                'type': 0,
+                'platform': 'telegram',
+                'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
+            },
+            {
+                "type": 2,
+                'platform': 'telegram',
+                "title": "What next?",
+                "replies": [
+                    "Draw another chart"
+                ]
+            },
+
+            # messages for Facebook
+            {
+                'type': 3,
+                'platform': 'facebook',
+                'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+            },
+            {
+                'type': 0,
+                'platform': 'facebook',
+                'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+            },
+            {
+                "type": 2,
+                'platform': 'facebook',
+                "title": "What next?",
+                "replies": [
+                    "Draw another chart"
+                ]
+            }
+        ],
+        'contextOut': contexts
+    }
+
+    return res
+
 # ###################### Plotbot Functions END ##############################
 
-# ###################### Decorators ##############################
+# ###################### Decorators #########################################
 @app.route('/')
 def index():
-    return 'Food Composition Chatbot'
+    return 'Webhooks for chatbots Plotbot and FoodCompositionChatBot'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -575,7 +634,7 @@ def webhook():
     # FoodCompositionChatbot action
     if action == 'foodcomposition':
         foodlabel = []
-        # Get food to be analysed
+        # We can get 1) text foodstuff label(-s) or 2) a photo with food (decided to refuse from providing image by URL)
         foodlabel.append(req.get('result').get('parameters').get('food'))
 
         # Make request to Nutritionix API and get fats/carbohydrates/proteins %
@@ -590,7 +649,7 @@ def webhook():
             'contextOut': req['result']['contexts']
         }
 
-    # PlotBot - input validation action for bar and line charts (user is supposed to enter series name (optionally) and at least 1 number)
+    # PlotBot / Input validation action for bar and line charts (user is supposed to enter series name (optionally) and at least 1 number)
     elif action == 'data-series-barline':
         #  get 'contexts'
         contexts = req.get('result').get('contexts')
@@ -615,60 +674,10 @@ def webhook():
         outputcontext = contexts
         # print('Old contexts: ' + str(outputcontext))
 
-        # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
-        if validation_result[0] == 'ok' or validation_result[0] == 'partly':
-            print('Here1')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if 'validated_ds' in context['parameters']:
-                        print('Here2')
-                        context['parameters']['validated_ds'].append(validation_result[2])
-                    else:
-                        print('Here3')
-                        context['parameters'].update({'validated_ds': [validation_result[2]]})
-        else:
-            # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
-            print('Here4')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if not 'validated_ds' in context['parameters']:
-                        print('Here5')
-                        for anothercontext in outputcontext:
-                            if anothercontext['name'] == 'ready2plot':
-                                anothercontext['lifespan'] = 0
+        # depending on validation_result update context and compose response for platforms
+        res = validation_response(validation_result, outputcontext)
 
-        # print('New contexts: '+ str(outputcontext))
-
-        # Prepare messages for other platforms besides web demo
-        outputmessages = [
-            {
-                "type": 0,
-                "platform": "telegram",
-                "speech": validation_result[1]
-            }
-        ]
-
-        if validation_result[0] != 'bad':
-            outputmessages.append({
-                  "type": 2,
-                  "platform": "telegram",
-                  "title": "Add another data series or",
-                  "replies": [
-                    "Build chart",
-                    "Restart"
-                  ]
-                })
-
-        # Compose response
-        res = {
-            'speech': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'displayText': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'sourse': 'webhook: data-series-barline',
-            'messages': outputmessages,
-            'contextOut': outputcontext
-        }
-
-    # PlotBot - input validation action for pie chart (user is supposed to enter 1 or several series in format <'series name' (optionally): only 1 number>)
+    # PlotBot / Input validation action for pie chart (user is supposed to enter 1 or several series in format <'series name' (optionally): only 1 number>)
     elif action == 'data-series-pie':
         #  get 'contexts'
         contexts = req.get('result').get('contexts')
@@ -691,62 +700,11 @@ def webhook():
 
         # get existing contexts
         outputcontext = contexts
-        # print('Old contexts: ' + str(outputcontext))
 
-        # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
-        if validation_result[0] == 'ok' or validation_result[0] == 'partly':
-            print('Here1')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if 'validated_ds' in context['parameters']:
-                        print('Here2')
-                        context['parameters']['validated_ds'].append(validation_result[2])
-                    else:
-                        print('Here3')
-                        context['parameters'].update({'validated_ds': [validation_result[2]]})
-        else:
-            # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
-            print('Here4')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if not 'validated_ds' in context['parameters']:
-                        print('Here5')
-                        for anothercontext in outputcontext:
-                            if anothercontext['name'] == 'ready2plot':
-                                anothercontext['lifespan'] = 0
+        # depending on validation_result update context and compose response for platforms
+        res = validation_response(validation_result, outputcontext)
 
-        # print('New contexts: '+ str(outputcontext))
-
-        # Prepare messages for other platforms besides web demo
-        outputmessages = [
-            {
-                "type": 0,
-                "platform": "telegram",
-                "speech": validation_result[1]
-            }
-        ]
-
-        if validation_result[0] != 'bad':
-            outputmessages.append({
-                  "type": 2,
-                  "platform": "telegram",
-                  "title": "Add another data series or",
-                  "replies": [
-                    "Build chart",
-                    "Restart"
-                  ]
-                })
-
-        # Compose response
-        res = {
-            'speech': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'displayText': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'sourse': 'webhook: data-series-pie',
-            'messages': outputmessages,
-            'contextOut': outputcontext
-        }
-
-    # PlotBot - input validation action for pie chart (user is supposed to enter 1 or several series in format <'series name' (optionally): only 1 number>)
+    # PlotBot / Input validation action for pie chart (user is supposed to enter 1 or several series in format <'series name' (optionally): only 1 number>)
     elif action == 'data-series-scatter':
         #  get 'contexts'
         contexts = req.get('result').get('contexts')
@@ -774,64 +732,10 @@ def webhook():
         outputcontext = contexts
         # print('Old contexts: ' + str(outputcontext))
 
-        # store validated data series in context ('mychart' >> 'parameters' >> 'validated_ds')
-        if validation_result[0] == 'ok' or validation_result[0] == 'partly':
-            print('Here1')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if 'validated_ds' in context['parameters']:
-                        print('Here2')
-                        print(validation_result[2])
-                        context['parameters']['validated_ds'].append(validation_result[2])
-                        print(context['parameters']['validated_ds'])
-                    else:
-                        print('Here3')
-                        print(validation_result[2])
-                        context['parameters'].update({'validated_ds': [validation_result[2]]})
-                        print(context['parameters']['validated_ds'])
-        else:
-            # if input was invalid and no previous validated DS exist in contexts, context 'ready2plot' should be deleted ('lifespan' >> 0)
-            print('Here4')
-            for context in outputcontext:
-                if context['name'] == 'mychart':
-                    if not 'validated_ds' in context['parameters']:
-                        print('Here5')
-                        for anothercontext in outputcontext:
-                            if anothercontext['name'] == 'ready2plot':
-                                anothercontext['lifespan'] = 0
+        # depending on validation_result update context and compose response for platforms
+        res = validation_response(validation_result, outputcontext)
 
-        # print('New contexts: '+ str(outputcontext))
-
-        # Prepare messages for other platforms besides web demo
-        outputmessages = [
-            {
-                "type": 0,
-                "platform": "telegram",
-                "speech": validation_result[1]
-            }
-        ]
-
-        if validation_result[0] != 'bad':
-            outputmessages.append({
-                  "type": 2,
-                  "platform": "telegram",
-                  "title": "Add another data series or",
-                  "replies": [
-                    "Build chart",
-                    "Restart"
-                  ]
-                })
-
-        # Compose response
-        res = {
-            'speech': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'displayText': validation_result[1] + ' Please add another data series or may I draw our chart? If something is wrong please write "restart" to start afresh',
-            'sourse': 'webhook: data-series-pie',
-            'messages': outputmessages,
-            'contextOut': outputcontext
-        }
-
-    # PlotBot - drawing BAR charts webhook
+    # PlotBot / Drawing BAR charts webhook
     elif action == 'plotbot-bar':
         # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
         contexts = req.get('result').get('contexts')
@@ -846,11 +750,11 @@ def webhook():
         ourfilename = 'static/' + req.get('id')[-12:]
 
         if chartsubtype == 'basic':
-            pygal_bar_basic(data2plot, chartname, ourfilename)
+            pygal_chart('bar_basic', data2plot, chartname, ourfilename)
         elif chartsubtype == 'horizontal':
-            pygal_bar_horizontal(data2plot, chartname, ourfilename)
+            pygal_chart('bar_horizontal', data2plot, chartname, ourfilename)
         elif chartsubtype == 'stacked':
-            pygal_bar_stacked(data2plot, chartname, ourfilename)
+            pygal_chart('bar_stacked', data2plot, chartname, ourfilename)
 
 
         # Telegram (and maybe some other platforms) don't insert png images into comments? Let's convert png to jpg..
@@ -867,46 +771,7 @@ def webhook():
                 context['lifespan'] = 0
 
         # Compose the response to dialogflow.com
-        res = {
-            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'source': 'plotbot-bar-webhook',
-
-            'messages': [
-                # messages for telegram
-                {
-                    'type': 0,
-                    'platform': 'telegram',
-                    'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    "type": 2,
-                    'platform': 'telegram',
-                    "title": "What next?",
-                    "replies": [
-                        "Draw another chart"
-                    ]
-                },
-
-                # messages for Facebook
-                {
-                    'type': 3,
-                    'platform': 'facebook',
-                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                }
-            ],
-            'contextOut': contexts
-        }
+        res = chartdone_response(ourfilename, contexts)
 
     # PlotBot - drawing LINE charts webhook
     elif action == 'plotbot-line':
@@ -923,11 +788,11 @@ def webhook():
         ourfilename = 'static/' + req.get('id')[-12:]
 
         if chartsubtype == 'basic':
-            pygal_line_basic(data2plot, chartname, ourfilename)
+            pygal_chart('line_basic', data2plot, chartname, ourfilename)
         elif chartsubtype == 'horizontal':
-            pygal_line_horizontal(data2plot, chartname, ourfilename)
+            pygal_chart('line_horizontal', data2plot, chartname, ourfilename)
         elif chartsubtype == 'stacked':
-            pygal_line_stacked(data2plot, chartname, ourfilename)
+            pygal_chart('line_stacked', data2plot, chartname, ourfilename)
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -935,46 +800,7 @@ def webhook():
                 context['lifespan'] = 0
 
         # Compose the response to dialogflow.com
-        res = {
-            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'source': 'plotbot-bar-webhook',
-
-            'messages': [
-                # messages for telegram
-                {
-                    'type': 0,
-                    'platform': 'telegram',
-                    'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    "type": 2,
-                    'platform': 'telegram',
-                    "title": "What next?",
-                    "replies": [
-                        "Draw another chart"
-                    ]
-                },
-
-                # messages for Facebook
-                {
-                    'type': 3,
-                    'platform': 'facebook',
-                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                }
-            ],
-            'contextOut': contexts
-        }
+        res = chartdone_response(ourfilename, contexts)
 
     # PlotBot - drawing PIE charts webhook
     elif action == 'plotbot-pie':
@@ -991,11 +817,11 @@ def webhook():
         ourfilename = 'static/' + req.get('id')[-12:]
 
         if chartsubtype == 'basic':
-            pygal_pie_basic(data2plot, chartname, ourfilename)
+            pygal_chart('pie_basic', data2plot, chartname, ourfilename)
         elif chartsubtype == 'donut':
-            pygal_pie_donut(data2plot, chartname, ourfilename)
+            pygal_chart('pie_donut', data2plot, chartname, ourfilename)
         elif chartsubtype == 'half pie':
-            pygal_pie_halfpie(data2plot, chartname, ourfilename)
+            pygal_chart('pie_halfpie', data2plot, chartname, ourfilename)
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -1003,46 +829,8 @@ def webhook():
                 context['lifespan'] = 0
 
         # Compose the response to dialogflow.com
-        res = {
-            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'source': 'plotbot-bar-webhook',
+        res = chartdone_response(ourfilename, contexts)
 
-            'messages': [
-                # messages for telegram
-                {
-                    'type': 0,
-                    'platform': 'telegram',
-                    'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    "type": 2,
-                    'platform': 'telegram',
-                    "title": "What next?",
-                    "replies": [
-                        "Draw another chart"
-                    ]
-                },
-
-                # messages for Facebook
-                {
-                    'type': 3,
-                    'platform': 'facebook',
-                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                }
-            ],
-            'contextOut': contexts
-        }
     # PlotBot - drawing SCATTER charts webhook
     elif action == 'plotbot-scatter':
         # at this stage we have at least 1 already validated data series saved in context 'mychart' in key 'validated_ds'
@@ -1056,9 +844,7 @@ def webhook():
         # to name our chart we'll use last 12 digist of 'id' from JSON got from dialogflow
         ourfilename = 'static/' + req.get('id')[-12:]
 
-        print('Drawing scatter plot...')
-        print('data2plot: ' + str(data2plot))
-        pygal_scatter(data2plot, chartname, ourfilename)
+        pygal_chart('scatter', data2plot, chartname, ourfilename)
 
         # then we need to return this image's ULR and also update contexts (set lifespan for mychart and ready2chart to 0)
         for context in contexts:
@@ -1066,46 +852,7 @@ def webhook():
                 context['lifespan'] = 0
 
         # Compose the response to dialogflow.com
-        res = {
-            'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-            'source': 'plotbot-bar-webhook',
-
-            'messages': [
-                # messages for telegram
-                {
-                    'type': 0,
-                    'platform': 'telegram',
-                    'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    "type": 2,
-                    'platform': 'telegram',
-                    "title": "What next?",
-                    "replies": [
-                        "Draw another chart"
-                    ]
-                },
-
-                # messages for Facebook
-                {
-                    'type': 3,
-                    'platform': 'facebook',
-                    'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
-                },
-                {
-                    'type': 0,
-                    'platform': 'facebook',
-                    'speech': 'To make another chart type "draw chart" or "restart"'
-                }
-            ],
-            'contextOut': contexts
-        }
+        res = chartdone_response(ourfilename, contexts)
 
     else:
         # If the request is not of our actions throw an error
@@ -1120,16 +867,3 @@ def webhook():
 if __name__ == '__main__':
     #port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0')#, port=port)
-
-'''
-{
-    'platform': 'facebook',
-    'type': 0,
-    'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png'
-},
-{
-    'platform': 'facebook',
-    'type': 0,
-    'speech': 'To make another chart type "draw chart" or "restart"'
-}'''
-

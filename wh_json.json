@@ -69,3 +69,205 @@
   },
   "sessionId": "599970b1-d135-4ad5-a64d-941435705c53"
 }
+
+telegram_response = {
+  'sessionId': '48b36cae-1056-4428-aab8-2061dce808fe',
+  'status': {
+    'code': 200,
+    'errorType': 'success',
+    'webhookTimedOut': False
+  },
+  'timestamp': '2018-02-21T20:05:44.041Z',
+  'result': {
+    'metadata': {
+      'intentId': 'ae14e24f-90ad-46bf-9c40-2c0ada75d4e8',
+      'intentName': 'main',
+      'webhookUsed': 'true',
+      'webhookForSlotFillingUsed': 'false'
+    },
+    'actionIncomplete': False,
+    'score': 1.0,
+    'parameters': {
+      'userinput': '51'
+    },
+    'action': 'testbot',
+    'fulfillment': {
+      'messages': [],
+      'speech': ''
+    },
+    'resolvedQuery': '51',
+    'contexts': [
+      {
+        'lifespan': 1,
+        'name': 'generic',
+        'parameters': {
+          'userinput.original': '51',
+          'userinput': '51',
+          'telegram_chat_id': '178180819'
+        }
+      }
+    ],
+    'speech': '',
+    'source': 'agent'
+  },
+  'lang': 'en',
+  'originalRequest': {
+    'data': {
+      'update_id': 686220960,
+      'message': {
+        'text': '51',
+        'from': {
+          'language_code': 'ru-RU',
+          'is_bot': False,
+          'first_name': 'Iurii',
+          'last_name': 'D.',
+          'id': 178180819
+        },
+        'chat': {
+          'first_name': 'Iurii',
+          'last_name': 'D.',
+          'id': 178180819,
+          'type': 'private'
+        },
+        'date': 1519243543,
+        'message_id': 263
+      }
+    },
+    'source': 'telegram'
+  },
+  'id': 'c405bf2e-1ac3-47ec-916a-d78632f0fba7'
+}
+
+web_demo_response = {
+  'status': {
+    'code': 200,
+    'errorType': 'success',
+    'webhookTimedOut': False
+  },
+  'timestamp': '2018-02-21T20:13:46.018Z',
+  'result': {
+    'metadata': {
+      'intentId': 'ae14e24f-90ad-46bf-9c40-2c0ada75d4e8',
+      'intentName': 'main',
+      'webhookUsed': 'true',
+      'webhookForSlotFillingUsed': 'false'
+    },
+    'actionIncomplete': False,
+    'score': 1.0,
+    'parameters': {
+      'userinput': '123'
+    },
+    'action': 'testbot',
+    'fulfillment': {
+      'messages': [],
+      'speech': ''
+    },
+    'resolvedQuery': '123',
+    'contexts': [],
+    'speech': '',
+    'source': 'agent'
+  },
+  'lang': 'en',
+  'id': '943bb5a9-df2e-44ad-85cf-44bdd9a1b277',
+  'sessionId': '965f1207-77a7-b3e9-941b-9b0f639dd50e'
+}
+
+telegram_response2 = {'sessionId': 'ff806e84-3a39-4f94-9f0e-40d3d6c8e1f7',
+  'status': {'code': 200, 'errorType': 'success', 'webhookTimedOut': False},
+  'timestamp': '2018-02-21T20:17:37.092Z', 'result': {'metadata': {'intentId': 'ae14e24f-90ad-46bf-9c40-2c0ada75d4e8',
+    'intentName': 'main', 'webhookUsed': 'true', 'webhookForSlotFillingUsed': 'false'},
+    'actionIncomplete': False, 'score': 1.0, 'parameters': {'userinput': 'По'}, 'action': 'testbot',
+    'fulfillment': {'messages': [], 'speech': ''}, 'resolvedQuery': 'По', 'contexts': [{'lifespan': 4, 'name': 'generic', 'parameters': {'userinput.original': 'По', 'userinput': 'По', 'telegram_chat_id': '103637644'}}], 'speech': '', 'source': 'agent'}, 'lang': 'en',
+  'originalRequest': {
+    'data': {
+      'update_id': 686220962,
+      'message': {
+        'text': 'По',
+        'from': {
+          'language_code': 'uk',
+          'is_bot': False,
+          'first_name': 'Vrednyi_lisenok',
+          'last_name': 'Alia',
+          'id': 103637644
+        },
+        'chat': {
+          'first_name': 'Vrednyi_lisenok',
+          'last_name': 'Alia',
+          'id': 103637644,
+          'type': 'private'
+        },
+        'date': 1519244256, 'message_id': 266}}, 'source': 'telegram'}, 'id': '33ea5d7a-f78e-4999-b09c-2226ba685170'}
+
+telegram_group = {
+  'result': {
+    'contexts': [
+      {
+        'parameters': {
+          'userinput': '/1',
+          'userinput.original': '/1',
+          'telegram_chat_id': '-272350283'
+        },
+        'lifespan': 2,
+        'name': 'generic'
+      }
+    ],
+    'actionIncomplete': False,
+    'metadata': {
+      'intentId': 'ae14e24f-90ad-46bf-9c40-2c0ada75d4e8',
+      'intentName': 'main',
+      'webhookUsed': 'true',
+      'webhookForSlotFillingUsed': 'false'
+    },
+    'score': 1.0,
+    'parameters': {
+      'userinput': '/1'
+    },
+    'fulfillment': {
+      'messages': [],
+      'speech': ''
+    },
+    'resolvedQuery': '/1',
+    'speech': '',
+    'action': 'testbot',
+    'source': 'agent'
+  },
+  'originalRequest': {
+    'data': {
+      'update_id': 686220974,
+      'message': {
+        'chat': {
+          'id': -272350283,
+          'title': 'TestGroup0000',
+          'all_members_are_administrators': True,
+          'type': 'group'
+        },
+        'message_id': 287,
+        'entities': [
+          {
+            'offset': 0,
+            'length': 2,
+            'type': 'bot_command'
+          }
+        ],
+        'text': '/1',
+        'from': {
+          'id': 178180819,
+          'last_name': 'D.',
+          'first_name': 'Iurii',
+          'is_bot': False,
+          'language_code': 'ru-RU'
+        },
+        'date': 1519245836
+      }
+    },
+    'source': 'telegram'
+  },
+  'id': 'b65d6879-a5e1-442b-8375-50af00ed75b5',
+  'sessionId': '28d8eec2-4071-406b-be9e-e26b8f3bb3b6',
+  'timestamp': '2018-02-21T20:43:56.686Z',
+  'status': {
+    'webhookTimedOut': False,
+    'errorType': 'success',
+    'code': 200},
+  'lang': 'en'
+}

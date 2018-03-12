@@ -1,20 +1,19 @@
-# this is the webhook for a TestBot
+# this is the version working at 'chatbots' VM in GC
+# contains webhooks and functions for 2 chatbots:
+# - PlotBot (https://github.com/IuriiD/plotbot ; PB) and
+# - FoodCompositionChatBot (https://github.com/IuriiD/food_composition_chatbot ; CFB)
 
-import os
 import json
 import requests
 from flask import Flask, request, make_response, jsonify
-from keys import nutrionix_app_id, nutrionix_app_key
-import pygal
-from pygal.style import DefaultStyle
-import cairosvg
+import ast # TestBot
 
 app = Flask(__name__)
 
-# ###################### Decorators ##############################
+# ###################### Decorators #########################################
 @app.route('/')
 def index():
-    return 'Food Composition Chatbot'
+    return 'Webhooks for chatbots Plotbot and FoodCompositionChatBot'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -22,54 +21,98 @@ def webhook():
     req = request.get_json(silent=True, force=True)
     action = req.get('result').get('action')
 
-    # TestBot Webhook action - testing stuff
-    if action == 'testbot':
-        myinput = req.get('result').get('parameters').get('input')
+    # TestBot (currently "BalanceBot")
+    if action == "testbot":
+        # Get our log (txt file will be substituted with Mongo DB)
+        with open("log.txt", "r+") as logfromtxt:
+            log = ast.literal_eval(logfromtxt.read())
+
+        BASIC_CURRENCY = 'UAH'
+        # Exchange rates to be substituted with calls to some API
+        usd_uah = 26.9
+        eur_uah = 33.1
+
+        user1 = req.get('result').get('parameters').get('user1')
+        user2 = req.get('result').get('parameters').get('user2')
+        sum = req.get('result').get('parameters').get('sum')  # {"amount": 100, "currency": "USD"}
+        sum_basic_currency = req.get('result').get('parameters').get('sum_basic_currency')
+        timestamp = req.get('timestamp')
+
+        print('user1: ' + user1)
+        print('user2: ' + user2)
+        print('sum: ' + str(sum))
+        print('sum_basic_currency: ' + str(sum_basic_currency))
+
+        # If currency != basic (for eg., UAH), convert to basic currency
+        amount = 0
+        if sum == "":
+            amount = sum_basic_currency
+        else:
+            if sum["currency"] == BASIC_CURRENCY:
+                amount = sum["amount"]
+            elif sum["currency"] == "USD":
+                amount = sum["amount"] * usd_uah
+            elif sum["currency"] == "EUR":
+                amount = sum["amount"] * eur_uah
+
+        print('sum_converted: ' + str(amount))
+
+        # In our 1st model we'll have 2 already registered users, Tim and Dan
+        if user2 == "":  # means that user1 paid for all = he gets his sum - sum/users_quantity, for eg. if 2 users and user1 paid $50, his balance will be +25$
+            who_received = "all"
+            every_user_gets = amount / len(log["users"])
+
+        print("log: " + str(log))
+
+        nexttransaction = {
+            "timestamp": timestamp,
+            "transaction_number": len(log["transactions"]) + 1,
+            "who_paid": user1,
+            "who_received": who_received,
+            "amount": amount,
+            "transaction_balance": {},
+            "total_balance": {}
+        }
+
+        for user in log["users"]:
+            if user != user1:
+                nexttransaction["transaction_balance"].update({user: every_user_gets * -1})
+                user_balance_was = log["transactions"][len(log["transactions"]) - 1]["total_balance"][user]
+                user_balance_now = user_balance_was + every_user_gets * -1
+            else:
+                nexttransaction["transaction_balance"].update({user: amount - every_user_gets})
+                user_balance_was = log["transactions"][len(log["transactions"]) - 1]["total_balance"][user]
+                user_balance_now = user_balance_was + amount - every_user_gets
+            print("Balance of user {} was {}, became {}".format(user, user_balance_was, user_balance_now))
+            nexttransaction["total_balance"][user] = user_balance_now
+
+        print("nexttransaction: " + str(nexttransaction))
+
+        log["transactions"].append(nexttransaction)
+        print("New log: " + str(log))
+
+        with open("log.txt", "w") as logdump:
+            logdump.write(str(log))
+
+        ourspeech = "Balance: " + str(log["transactions"][len(log["transactions"]) - 1]["total_balance"])
 
         res = {
-            'speech': '### 1 ###: ' + myinput,
-            'displayText': '### 2 ###: ' + myinput,
-            'source': 'mywebhook',
-            "messages": [
+            'speech': ourspeech,
+            'displayText': ourspeech,
+            'source': 'webhook: testbot',
+
+            'messages': [
                 {
-                    "speech": "Hello Telegram: " + myinput,
-                    "platform": "telegram",
-                    "type": 0
+                    'type': 0,
+                    'platform': 'telegram',
+                    'speech': ourspeech
                 },
                 {
-                    "speech": "http://35.196.100.14/static/0f1d5949c0fe.png",
-                    "platform": "telegram",
-                    "type": 0
-                },
-                {
-                    "buttons": [
-                        {
-                            "postback": "line",
-                            "text": "Line"
-                        },
-                        {
-                            "postback": "bar",
-                            "text": "Bar"
-                        },
-                        {
-                            "postback": "scatter",
-                            "text": "Scatter"
-                        },
-                        {
-                            "postback": "pie",
-                            "text": "Scatter"
-                        }
-                    ],
-                    "imageUrl": "https://iuriid.github.io/img/chart.types.jpg",
-                    "platform": "telegram",
-                    "title": "Please choose a chart type",
-                    "type": 1
-                },
-                {
-                    "speech": 'Response for web demo: ' + myinput,
-                    "type": 0
+                    'type': 0,
+                    'speech': ourspeech
                 }
-            ]
+            ],
+            'contextOut': req['result']['contexts']
         }
 
     else:
@@ -85,40 +128,3 @@ def webhook():
 if __name__ == '__main__':
     #port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0')#, port=port)
-
-
-{
-    "telegram": {
-        "text": "Choose one of the options",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Text1",
-                        "callback_data": "data1"
-                    }
-                ],
-                [
-                    {
-                        "text": "Text2",
-                        "callback_data": "data2"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-{
-    "telegram": {
-        "text": "Choose one of the options",
-        "reply_markup": {
-            "inline_keyboard": [
-                    {
-                        "text": "Text1",
-                        "callback_data": "data1"
-                    }
-                ]
-        }
-    }
-}
