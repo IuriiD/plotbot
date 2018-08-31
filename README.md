@@ -8,10 +8,10 @@
 </p>
 <p>
     Here’s how it looks in Telegram and Web Demo:
-    <a href="https://iuriid.github.io/img/pb-4.gif" target="_blank"><img src="https://iuriid.github.io/img/pb-4.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
+    <a href="https://iuriid.github.io/public/img/pb-4.gif" target="_blank"><img src="https://iuriid.github.io/public/img/pb-4.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
     <br>
     And here’s the version for Facebook Messenger:
-    <a href="https://iuriid.github.io/img/pb-5.gif" target="_blank"><img src="https://iuriid.github.io/img/pb-5.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
+    <a href="https://iuriid.github.io/public/img/pb-5.gif" target="_blank"><img src="https://iuriid.github.io/public/img/pb-5.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
 </p>
 <p>
     <b>General info</b>
@@ -21,11 +21,11 @@
 <p>
     <b>Structure</b>
     <br>Intents structure for PlotBot is as follows (a big image 5k pixels width ;):
-    <a href="https://iuriid.github.io/img/plotbot_intents_structure.gif" target="_blank"><img src="https://iuriid.github.io/img/plotbot_intents_structure.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
+    <a href="https://iuriid.github.io/public/img/plotbot_intents_structure.gif" target="_blank"><img src="https://iuriid.github.io/public/img/plotbot_intents_structure.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
     A stepwise “slot-filling” dialog is assumed where user is suggested to name a chart, choose chart type, chart subtype, then to enter one or several data series and then to confirm chart building. Two webhooks are used for each chart type – one to validate data series and another to build and present charts.
     <br>These scheme seems to be rather redundant and already now, after building my 2nd chatbot I would have shortened it to 1 block instead of 4 with using more webhooks.
     <br>Entities (chart types and subtypes/styles) - quite simple:
-    <a href="https://iuriid.github.io/img/pb-6.gif" target="_blank"><img src="https://iuriid.github.io/img/pb-6.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
+    <a href="https://iuriid.github.io/public/img/pb-6.gif" target="_blank"><img src="https://iuriid.github.io/public/img/pb-6.gif" class="img-fluid img-thumbnail" style="max-width: 800px"></a>
     For a more detailed view please see the chatbot agent and source code for webhooks.
 </p>
 <p>
