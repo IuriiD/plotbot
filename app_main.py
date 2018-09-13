@@ -14,6 +14,8 @@ import cairosvg # PB
 from keys import nutrionix_app_id, nutrionix_app_key # FCB
 import ast # TestBot
 
+server_ip = 'http://35.231.253.63:82/'
+
 app = Flask(__name__)
 
 # ###################### Food Composition Chatbot Functions ##############################
@@ -573,8 +575,8 @@ def chartdone_response(ourfilename, contexts):
         Funtion takes file name of a built chart and updated context and returns a response for different platforms
     '''
     res = {
-        'speech': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
-        'displayText': 'Here is our chart: interactive - http://35.196.100.14/' + ourfilename + '.svg and static - http://35.196.100.14/' + ourfilename + '.png',
+        'speech': 'Here is our chart: interactive - ' + server_ip + ourfilename + '.svg and static - ' + server_ip + ourfilename + '.png',
+        'displayText': 'Here is our chart: interactive - ' + server_ip + ourfilename + '.svg and static - ' + server_ip + ourfilename + '.png',
         'source': 'webhook: chart built',
 
         'messages': [
@@ -582,7 +584,7 @@ def chartdone_response(ourfilename, contexts):
             {
                 'type': 0,
                 'platform': 'telegram',
-                'speech': 'Done: here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg, and here\'s a static one: http://35.196.100.14/' + ourfilename + '.png'
+                'speech': 'Done: here is an interactive version - ' + server_ip + ourfilename + '.svg, and here\'s a static one: ' + server_ip + ourfilename + '.png'
             },
             {
                 "type": 2,
@@ -597,12 +599,12 @@ def chartdone_response(ourfilename, contexts):
             {
                 'type': 3,
                 'platform': 'facebook',
-                'imageUrl': 'http://35.196.100.14/' + ourfilename + '.png'
+                'imageUrl': server_ip + ourfilename + '.png'
             },
             {
                 'type': 0,
                 'platform': 'facebook',
-                'speech': 'And here is an interactive version - http://35.196.100.14/' + ourfilename + '.svg'
+                'speech': 'And here is an interactive version - ' + server_ip + ourfilename + '.svg'
             },
             {
                 "type": 2,
